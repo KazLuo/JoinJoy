@@ -29,21 +29,21 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { StatusCode= HttpStatusCode.BadRequest, Status = false, Message = "帳號或密碼格式錯誤，請重新輸入" });
             }
             // 檢查帳號是否已存在
-            var existingUser = db.Members.FirstOrDefault(m => m.Account == viewRegister.Account);
+            var existingUser = db.Members.FirstOrDefault(m => m.Account == viewRegister.email);
             if (existingUser != null)
             {
                 return Content(HttpStatusCode.BadRequest, new { StatusCode = HttpStatusCode.BadRequest, Status = false, Message = "帳號已存在" });
             }
 
             byte[] salt = argon2.CreateSalt();
-            byte[] hashedPassword = argon2.HashPassword(viewRegister.Password, salt);
+            byte[] hashedPassword = argon2.HashPassword(viewRegister.password, salt);
 
             var newUser = new Member
             {
-                Account = viewRegister.Account,
+                Account = viewRegister.email,
                 Password = Convert.ToBase64String(hashedPassword),
                 PasswordSalt = Convert.ToBase64String(salt),
-                Nickname = viewRegister.Nickname
+                Nickname = viewRegister.nickname
             };
 
             db.Members.Add(newUser);
@@ -63,8 +63,8 @@ namespace JoinJoy.Controllers
                 {
                     return Content(HttpStatusCode.BadRequest, new { StatusCode = HttpStatusCode.BadRequest, Status = false, Message = "帳號或密碼格式錯誤，請重新輸入" });
                 }
-                string account = viewlogin.Account;
-                string password = viewlogin.Password;
+                string account = viewlogin.email;
+                string password = viewlogin.password;
 
                 // 尋找帳號
                 var user = db.Members.FirstOrDefault(m => m.Account == account);

@@ -14,7 +14,7 @@ namespace JoinJoy.Models.ViewModels
         [MaxLength(200)]
         [DataType(DataType.EmailAddress)]
         [Display(Name = "帳號")]
-        public string Account { get; set; }
+        public string email { get; set; }
 
         [Required(ErrorMessage = "{0}必填")]
         //設定6~12字英文數字混合密碼(至少1個英文)
@@ -23,16 +23,16 @@ namespace JoinJoy.Models.ViewModels
         //用於指定一個字串應該被當作密碼處理
         [DataType(DataType.Password)]
         [Display(Name = "密碼")]
-        public string Password { get; set; }
+        public string password { get; set; }
 
         [Required]
         [Compare("Password", ErrorMessage = "密碼和確認密碼不匹配")]
-        public string ConfirmPassword { get; set; }
+        public string confirmPassword { get; set; }
 
         [Required(ErrorMessage = "{0}必填")]
         [MaxLength(50)]
         [Display(Name = "名稱")]
-        public string Nickname { get; set; }
+        public string nickname { get; set; }
 
   
     }

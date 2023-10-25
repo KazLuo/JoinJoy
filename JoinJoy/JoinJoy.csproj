@@ -270,6 +270,7 @@
     <Compile Include="Models\StoreInventory.cs" />
     <Compile Include="Models\StorePhoto.cs" />
     <Compile Include="Models\StoreRating.cs" />
+    <Compile Include="Models\ViewModels\ViewGroupComment.cs" />
     <Compile Include="Models\ViewModels\Viewlogin.cs" />
     <Compile Include="Models\ViewModels\ViewRegister.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
