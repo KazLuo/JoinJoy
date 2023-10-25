@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.34114.132
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JoinJoy", "JoinJoy\JoinJoy.csproj", "{034D3176-FCD6-46EC-AE6D-2A77E6072E94}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{034D3176-FCD6-46EC-AE6D-2A77E6072E94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{034D3176-FCD6-46EC-AE6D-2A77E6072E94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{034D3176-FCD6-46EC-AE6D-2A77E6072E94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{034D3176-FCD6-46EC-AE6D-2A77E6072E94}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CA629B16-4A26-4FFF-830B-9EC4594C9C78}
+	EndGlobalSection
+EndGlobal
