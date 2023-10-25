@@ -93,6 +93,7 @@ namespace JoinJoy.Controllers
                 string jwtToken = jwtAuthUtil.GenerateToken(user.Id);
 
                 return Ok(new { StatusCode = HttpStatusCode.OK, Status = true, JwtToken = jwtToken, Message = "登入成功" });
+            //asdasdasdasdasdsa
             
         }
 
