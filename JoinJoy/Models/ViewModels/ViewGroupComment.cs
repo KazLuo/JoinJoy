@@ -9,6 +9,6 @@ namespace JoinJoy.Models.ViewModels
     public class ViewGroupComment
     {
         [MaxLength(500)]
-        public string CommentContent { get; set; }
+        public string commentContent { get; set; }
     }
 }

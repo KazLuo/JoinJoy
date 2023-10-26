@@ -48,7 +48,7 @@ namespace JoinJoy.Models
 
         //這邊不使用原先的權限資料表，只需要改成是否為店家就好
         [Display(Name = "是否為店家")]
-        public bool IsStoreOwer { get; set; } = false;
+        public bool IsStoreOwner { get; set; } = false;
 
         [Display(Name = "會員圖片")]
         public string Photo { get; set; }

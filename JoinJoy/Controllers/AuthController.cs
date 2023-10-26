@@ -18,6 +18,7 @@ namespace JoinJoy.Controllers
         private Context db = new Context();
         //用於驗證加密密碼
         private Argon2Verify argon2 = new Argon2Verify();
+
         #region "register"
         [HttpPost]
         [Route("register")]
@@ -26,7 +27,7 @@ namespace JoinJoy.Controllers
             //"帳號或密碼格式錯誤，請重新輸入"
             if (!ModelState.IsValid)
             {
-                return Content(HttpStatusCode.BadRequest, new { StatusCode= HttpStatusCode.BadRequest, Status = false, Message = "帳號或密碼格式錯誤，請重新輸入" });
+                return Content(HttpStatusCode.BadRequest, new { StatusCode = HttpStatusCode.BadRequest, Status = false, Message = "帳號或密碼格式錯誤，請重新輸入" });
             }
             // 檢查帳號是否已存在
             var existingUser = db.Members.FirstOrDefault(m => m.Account == viewRegister.email);

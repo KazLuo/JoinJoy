@@ -26,7 +26,7 @@ namespace JoinJoy.Models.ViewModels
         public string password { get; set; }
 
         [Required]
-        [Compare("Password", ErrorMessage = "密碼和確認密碼不匹配")]
+        [Compare("password", ErrorMessage = "密碼和確認密碼不匹配")]
         public string confirmPassword { get; set; }
 
         [Required(ErrorMessage = "{0}必填")]
