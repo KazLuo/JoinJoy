@@ -7,11 +7,11 @@ using System.Web.Http;
 using JoinJoy.Models;
 using JoinJoy.Models.ViewModels;
 using JoinJoy.Security;
-
-
+using NSwag.Annotations;
 
 namespace JoinJoy.Controllers
 {
+    [OpenApiTag("Users", Description = "基本註冊登入功能")]
     [RoutePrefix("auth")]
     public class AuthController : ApiController
     {
@@ -20,6 +20,10 @@ namespace JoinJoy.Controllers
         private Argon2Verify argon2 = new Argon2Verify();
 
         #region "register"
+        /// <summary>
+        /// 會員註冊
+        /// </summary>
+        /// <returns></returns>
         [HttpPost]
         [Route("register")]
         public IHttpActionResult Register(ViewRegister viewRegister)
@@ -55,6 +59,11 @@ namespace JoinJoy.Controllers
         #endregion "register"
 
         #region "login"
+        /// <summary>
+        /// 會員登入
+        /// </summary>
+        /// <param name="viewlogin">會員登入</param>
+        /// <returns></returns>
         [HttpPost]
         [Route("login")]
         public IHttpActionResult Login(Viewlogin viewlogin)

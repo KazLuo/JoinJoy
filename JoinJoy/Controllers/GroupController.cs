@@ -14,10 +14,10 @@ namespace JoinJoy.Controllers
     public class GroupController : ApiController
     {
         private Context db = new Context();
-        #region"CreatGroup"
+        #region"CreateGroup"
         
         [HttpPost]
-        [Route("creat")]
+        [Route("create")]
         [JwtAuthFilter]
         public IHttpActionResult CreateGroup(ViewGroup viewModel)
         {
@@ -33,30 +33,28 @@ namespace JoinJoy.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Assuming you have a method to get the current user's ID from JWT.
-            //int currentUserId = GetCurrentUserIdFromJwt();
 
             Group newGroup = new Group
             {
                 MemberId = memberInfo.Id,//用JWT生成會員資訊
-                GroupName = viewModel.GroupName,
-                StartTime = viewModel.StartTime,
-                EndTime = viewModel.EndTime,
-                MaxParticipants = viewModel.MaxParticipants,
+                GroupName = viewModel.groupName,
+                StartTime = viewModel.startTime,
+                EndTime = viewModel.endTime,
+                MaxParticipants = viewModel.totalMemberQtu,
                 CurrentParticipants = 1,
                 //CurrentParticipants = viewModel.CurrentParticipants, // Default is 1 as per ViewModel
-                Description = viewModel.Description,
-                IsHomeGroup = viewModel.IsHomeGroup,
-                Address = viewModel.Address,
-                InitMember = viewModel.InitMember,
-                Beginner = viewModel.Beginner,
-                Expert = viewModel.Expert,
-                Practice = viewModel.Practice,
-                Open = viewModel.Open,
-                Tutorial = viewModel.Tutorial,
-                Casual = viewModel.Casual,
-                Competitive = viewModel.Competitive,
-                CreationDate = viewModel.CreationDate
+                Description = viewModel.description,
+                IsHomeGroup = viewModel.isHomeGroup,
+                Address = viewModel.address,
+                InitMember = viewModel.initMember,
+                Beginner = viewModel.beginnerTag,
+                Expert = viewModel.expertTag,
+                Practice = viewModel.practiceTag,
+                Open = viewModel.openTag,
+                Tutorial = viewModel.tutorialTag,
+                Casual = viewModel.casualTag,
+                Competitive = viewModel.competitiveTag,
+                
             };
 
             db.Groups.Add(newGroup);
@@ -65,5 +63,6 @@ namespace JoinJoy.Controllers
             return Ok(new { groupId = newGroup.GroupId, message = "Group created successfully." });
         }
         #endregion
+
     }
 }
