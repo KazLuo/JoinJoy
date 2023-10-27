@@ -257,6 +257,10 @@
     <Compile Include="Migrations\202310260536034_add storeowner.Designer.cs">
       <DependentUpon>202310260536034_add storeowner.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202310270337529_add groupstate.cs" />
+    <Compile Include="Migrations\202310270337529_add groupstate.Designer.cs">
+      <DependentUpon>202310270337529_add groupstate.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
     <Compile Include="Models\Context.cs" />
@@ -391,6 +395,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202310260536034_add storeowner.resx">
       <DependentUpon>202310260536034_add storeowner.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202310270337529_add groupstate.resx">
+      <DependentUpon>202310270337529_add groupstate.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
