@@ -233,33 +233,9 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202310240658452_1.cs" />
-    <Compile Include="Migrations\202310240658452_1.Designer.cs">
-      <DependentUpon>202310240658452_1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202310240942554_2.cs" />
-    <Compile Include="Migrations\202310240942554_2.Designer.cs">
-      <DependentUpon>202310240942554_2.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202310240959576_3.cs" />
-    <Compile Include="Migrations\202310240959576_3.Designer.cs">
-      <DependentUpon>202310240959576_3.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202310241345463_add group tag.cs" />
-    <Compile Include="Migrations\202310241345463_add group tag.Designer.cs">
-      <DependentUpon>202310241345463_add group tag.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202310241719270_fix salt.cs" />
-    <Compile Include="Migrations\202310241719270_fix salt.Designer.cs">
-      <DependentUpon>202310241719270_fix salt.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202310260536034_add storeowner.cs" />
-    <Compile Include="Migrations\202310260536034_add storeowner.Designer.cs">
-      <DependentUpon>202310260536034_add storeowner.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202310270337529_add groupstate.cs" />
-    <Compile Include="Migrations\202310270337529_add groupstate.Designer.cs">
-      <DependentUpon>202310270337529_add groupstate.cs</DependentUpon>
+    <Compile Include="Migrations\202310270958171_2.cs" />
+    <Compile Include="Migrations\202310270958171_2.Designer.cs">
+      <DependentUpon>202310270958171_2.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
@@ -378,26 +354,8 @@
     <Content Include="Scripts\jquery-3.4.1.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202310240658452_1.resx">
-      <DependentUpon>202310240658452_1.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310240942554_2.resx">
-      <DependentUpon>202310240942554_2.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310240959576_3.resx">
-      <DependentUpon>202310240959576_3.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310241345463_add group tag.resx">
-      <DependentUpon>202310241345463_add group tag.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310241719270_fix salt.resx">
-      <DependentUpon>202310241719270_fix salt.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310260536034_add storeowner.resx">
-      <DependentUpon>202310260536034_add storeowner.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310270337529_add groupstate.resx">
-      <DependentUpon>202310270337529_add groupstate.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202310270958171_2.resx">
+      <DependentUpon>202310270958171_2.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

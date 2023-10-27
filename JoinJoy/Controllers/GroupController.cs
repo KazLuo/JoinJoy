@@ -77,7 +77,7 @@ namespace JoinJoy.Controllers
         /// <returns></returns>
         #region "GroupComment"
         [HttpPost]
-        [Route("groupcomment")]
+        [Route("comment")]
         [JwtAuthFilter]
         public IHttpActionResult GroupComment(ViewGroupComment viewGroupComment)
         {
@@ -117,8 +117,28 @@ namespace JoinJoy.Controllers
             return Ok(new { memberId = newgroupComment.MemberId, groupId = newgroupComment.GroupId, message = "已成功留言" });
         }
         #endregion
-//testtest
-        //asdasdd
+
+        /// <summary>
+        /// 揪團留言板(接收訊息)
+        /// </summary>
+        /// <param name="id">收入該團所有</param>
+        /// <returns></returns>
+        #region "GroupComment"
+        [HttpGet]
+        [JwtAuthFilter]
+        [Route("getcomment/{id}")]
+        public IHttpActionResult GetComment(int? id)
+        {
+          
+            if (id == null)
+            {
+                return Content(HttpStatusCode.BadRequest, new { message = "沒有groupId" });
+            }
+            return Content(HttpStatusCode.OK, new {groupId=id, message = "讀取留言成功" });
+        }
+        #endregion
+
+
 
     }
 }
