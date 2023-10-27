@@ -11,7 +11,7 @@ using NSwag.Annotations;
 
 namespace JoinJoy.Controllers
 {
-    [OpenApiTag("Users", Description = "基本註冊登入功能")]
+    [OpenApiTag("Auth", Description = "基本註冊登入功能")]
     [RoutePrefix("auth")]
     public class AuthController : ApiController
     {

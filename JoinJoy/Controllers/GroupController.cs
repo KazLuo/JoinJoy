@@ -1,6 +1,7 @@
 ﻿using JoinJoy.Models;
 using JoinJoy.Models.ViewModels;
 using JoinJoy.Security;
+using NSwag.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,12 +11,17 @@ using System.Web.Http;
 
 namespace JoinJoy.Controllers
 {
+    [OpenApiTag("Group", Description = "核心開團功能")]
     [RoutePrefix("group")]
     public class GroupController : ApiController
     {
         private Context db = new Context();
         #region"CreateGroup"
-        
+        /// <summary>
+        /// 開團表單
+        /// </summary>
+        /// <param name="viewModel">主要用於填寫開團資料(不含遊戲預約店家預約現況)</param>
+        /// <returns></returns>
         [HttpPost]
         [Route("create")]
         [JwtAuthFilter]
@@ -54,15 +60,64 @@ namespace JoinJoy.Controllers
                 Tutorial = viewModel.tutorialTag,
                 Casual = viewModel.casualTag,
                 Competitive = viewModel.competitiveTag,
+                GroupState = EnumList.GroupState.開團中
                 
             };
 
             db.Groups.Add(newGroup);
             db.SaveChanges();
 
-            return Ok(new { groupId = newGroup.GroupId, message = "Group created successfully." });
+            return Ok(new { groupId = newGroup.GroupId, groupState=newGroup.GroupState.ToString() , message = "已成功開團!" });
         }
         #endregion
+        /// <summary>
+        /// 揪團留言板(送出訊息)
+        /// </summary>
+        /// <param name="viewGroupComment">送出留言功能</param>
+        /// <returns></returns>
+        #region "GroupComment"
+        [HttpPost]
+        [Route("groupcomment")]
+        [JwtAuthFilter]
+        public IHttpActionResult GroupComment(ViewGroupComment viewGroupComment)
+        {
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int memberId = (int)userToken["Id"];
+            var memberInfo = db.Members.FirstOrDefault(m => m.Id == memberId);
+            //可以使用int? 形成可空的int
+            int? groupId = viewGroupComment.groupId;
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+
+            if (!groupId.HasValue)
+            {
+                return Content(HttpStatusCode.BadRequest, new { message = "groupId 不能為 null" });
+            }
+
+            // 使用 FirstOrDefault 檢查資料庫中是否存在該 groupId
+            var groupInDb = db.Groups.FirstOrDefault(m => m.GroupId == groupId.Value);
+            if (groupInDb == null)
+            {
+                return Content(HttpStatusCode.BadRequest, new { message = "該團尚未開放，無法送出留言" });
+            }
+
+
+            GroupComment newgroupComment = new GroupComment
+            {
+                GroupId = viewGroupComment.groupId,
+                MemberId = memberInfo.Id,
+                CommentContent = viewGroupComment.commentTxt,
+            };
+            db.GroupComments.Add(newgroupComment);
+            db.SaveChanges();
+            return Ok(new { memberId = newgroupComment.MemberId, groupId = newgroupComment.GroupId, message = "已成功留言" });
+        }
+        #endregion
+
 
     }
 }
