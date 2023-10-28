@@ -77,7 +77,7 @@ namespace JoinJoy.Controllers
         /// <returns></returns>
         #region "GroupComment"
         [HttpPost]
-        [Route("comment")]
+        [Route("comments")]
         [JwtAuthFilter]
         public IHttpActionResult GroupComment(ViewGroupComment viewGroupComment)
         {
@@ -121,12 +121,12 @@ namespace JoinJoy.Controllers
         /// <summary>
         /// 揪團留言板(接收訊息)
         /// </summary>
-        /// <param name="id">收入該團所有</param>
+        /// <param name="id">收入該團所有訊息</param>
         /// <returns></returns>
         #region "GroupComment"
         [HttpGet]
-        [JwtAuthFilter]
-        [Route("getcomment/{id}")]
+        //[JwtAuthFilter]
+        [Route("comments/{id}")]
         public IHttpActionResult GetComment(int? id)
         {
           
@@ -134,7 +134,14 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.BadRequest, new { message = "沒有groupId" });
             }
-            return Content(HttpStatusCode.OK, new {groupId=id, message = "讀取留言成功" });
+
+            var data = db.GroupComments.Where(m => m.GroupId == id).Select(m=>new {m.MemberId,m.CommentContent,m.CommentDate }).ToList();
+            if(data == null || !data.Any())
+            {
+                return Content(HttpStatusCode.BadRequest, new { message = "尚未有留言" });
+            }
+            
+            return Content(HttpStatusCode.OK, new {groupId=id, message = "讀取留言成功", data });
         }
         #endregion
 

@@ -14,7 +14,7 @@ namespace JoinJoy.Models.ViewModels
         public DateTime endTime { get; set; }  // 結束時間
         public int totalMemberQtu { get; set; }  // 滿人數
         public int currentppl { get; set; } = 1;  // 現況人數(開團時預設就是1)
-        [MaxLength(500)]
+        [MaxLength(100)]
         public string description { get; set; }  // 團長想說的話
         public bool isHomeGroup { get; set; } = false;  // 是否為自家團(預設false)
         public string address { get; set; }  // 自宅團地址

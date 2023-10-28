@@ -32,12 +32,12 @@ namespace JoinJoy.Models
         public int MaxParticipants { get; set; }
         public int CurrentParticipants { get; set; } = 1;  // 預設為團主
 
-        [MaxLength(500)]
+        [MaxLength(100)]
         public string Description { get; set; }
 
         public bool IsHomeGroup { get; set; }
 
-        [MaxLength(200)]
+        [MaxLength(100)]
         public string Address { get; set; }
         //內建幾人
         public int InitMember { get; set; }
