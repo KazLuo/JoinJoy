@@ -46,6 +46,11 @@ namespace JoinJoy.Controllers
             });
         }
         #endregion
+        /// <summary>
+        /// 修改會員詳細資訊
+        /// </summary>
+        /// <param name="viewUdtMember">獲取會員詳細資訊</param>
+        /// <returns></returns>
         #region"EditMemberDetails"
         [HttpPost]
         [JwtAuthFilter]
