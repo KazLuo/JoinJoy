@@ -54,7 +54,7 @@ namespace JoinJoy.Models
         public string Photo { get; set; }
 
         [Display(Name = "會員介紹")]
-        [MaxLength(120)]
+        [MaxLength(100)]
         public string Introduce { get; set; }
 
         //使用"="讓他預設
