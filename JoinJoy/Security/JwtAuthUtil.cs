@@ -32,6 +32,7 @@ namespace JoinJoy.Security
             {
                 { "Id", user.Id },
                 { "Account", user.Account },
+                { "IsStoreOwner",user.IsStoreOwner},
                 { "NickName", user.Nickname },
                 { "Exp", DateTime.Now.AddMinutes(30).ToString() } // JwtToken 時效設定 30 分
             };

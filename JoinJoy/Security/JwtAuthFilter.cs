@@ -16,7 +16,7 @@ namespace JoinJoy.Security
     public class JwtAuthFilter : ActionFilterAttribute
     {
         // 加解密的 key，如果不一樣會無法成功解密
-        private static readonly string secretKey = WebConfigurationManager.AppSettings["JoinJoy"];
+        private static readonly string secretKey = WebConfigurationManager.AppSettings["TokenKey"];
 
         /// <summary>
         /// 過濾有用標籤 [JwtAuthFilter] 請求的 API 的 JwtToken 狀態及內容
