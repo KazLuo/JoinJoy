@@ -41,8 +41,8 @@ namespace JoinJoy.Controllers
                 nickname = member.Nickname,
                 account = member.Account,
                 introduce = member.Introduce,
-                gamePreferences = member.GamePreferences.Select(m => m.GameType.TypeName),  // Assuming GameType is a property of MemberGamePref
-                cityPreferences = member.CityPreferences.Select(m => m.City.CityName)      // Assuming City is a property of MemberCityPref
+                gamePref = member.GamePreferences.Select(m => m.GameType.TypeName),  
+                cityPref = member.CityPreferences.Select(m => m.City.CityName)      
             });
         }
         #endregion
