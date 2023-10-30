@@ -253,6 +253,10 @@
     <Compile Include="Migrations\202310290758598_fix some MaxLength.Designer.cs">
       <DependentUpon>202310290758598_fix some MaxLength.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202310300644061_fix group_Status.cs" />
+    <Compile Include="Migrations\202310300644061_fix group_Status.Designer.cs">
+      <DependentUpon>202310300644061_fix group_Status.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
     <Compile Include="Models\Context.cs" />
@@ -380,6 +384,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202310290758598_fix some MaxLength.resx">
       <DependentUpon>202310290758598_fix some MaxLength.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202310300644061_fix group_Status.resx">
+      <DependentUpon>202310300644061_fix group_Status.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

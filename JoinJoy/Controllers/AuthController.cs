@@ -116,7 +116,7 @@ namespace JoinJoy.Controllers
         #region"更改密碼"
         [HttpPost]
         [JwtAuthFilter]
-        [Route("changePassword")]
+        [Route("changePaswrd")]
         public IHttpActionResult ChangePassword(ViewPasswordChange viewPasswordChange)
         {
 
@@ -136,19 +136,19 @@ namespace JoinJoy.Controllers
             }
             // 使用存儲的鹽值驗證舊密碼
             byte[] storedSalt = Convert.FromBase64String(user.PasswordSalt);
-            if (!argon2.VerifyHash(viewPasswordChange.oldPasswrd, storedSalt, Convert.FromBase64String(user.Password)))
+            if (!argon2.VerifyHash(viewPasswordChange.oldPaswrd, storedSalt, Convert.FromBase64String(user.Password)))
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "舊密碼錯誤，請重新輸入" });
             }
             // 檢查新密碼是否與舊密碼相同
-            if (argon2.VerifyHash(viewPasswordChange.newPasswrd, storedSalt, Convert.FromBase64String(user.Password)))
+            if (argon2.VerifyHash(viewPasswordChange.newPaswrd, storedSalt, Convert.FromBase64String(user.Password)))
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "新密碼不能與舊密碼相同" });
             }
 
             // 為新密碼生成新的Hash&Salt
             byte[] newSalt = argon2.CreateSalt();
-            byte[] newHashedPassword = argon2.HashPassword(viewPasswordChange.newPasswrd, newSalt);
+            byte[] newHashedPassword = argon2.HashPassword(viewPasswordChange.newPaswrd, newSalt);
 
             // 更新資料庫中的密碼和Salt
             user.Password = Convert.ToBase64String(newHashedPassword);

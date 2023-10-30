@@ -85,7 +85,7 @@ namespace JoinJoy.Models
         [Display(Name = "生成時間")]
         public DateTime CreationDate { get; set; } = DateTime.Now;
         [Display(Name = "開團狀態")]
-        public EnumList.GroupState GroupState { get; set; }
+        public EnumList.GroupState GroupState { get; set; } = EnumList.GroupState.開團中;
         public virtual Member Member { get; set; }
         public virtual Store Store { get; set; }
         //參加團

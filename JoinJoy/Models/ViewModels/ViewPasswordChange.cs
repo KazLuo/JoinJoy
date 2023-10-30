@@ -9,11 +9,11 @@ namespace JoinJoy.Models.ViewModels
     public class ViewPasswordChange
     {
         [Required]
-        public string oldPasswrd { get; set; }
+        public string oldPaswrd { get; set; }
         [Required]
-        public string newPasswrd { get; set; }
+        public string newPaswrd { get; set; }
         [Required]
         [Compare("newPasswrd", ErrorMessage = "密碼和確認密碼不匹配")]
-        public string confPasswrd { get; set; }
+        public string confPaswrd { get; set; }
     }
 }
