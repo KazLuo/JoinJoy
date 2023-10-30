@@ -95,9 +95,11 @@ namespace JoinJoy.Models
         //public virtual ICollection<GroupComment> GroupComments { get; set; }
 
         // 這個會員追蹤的店家
+        [JsonIgnore]
         public virtual ICollection<MemberFollow> FollowedStores { get; set; }
 
         // 這個會員被哪些店家追蹤
+        [JsonIgnore]
         public virtual ICollection<StoreFollow> FollowedByStores { get; set; }
 
 
