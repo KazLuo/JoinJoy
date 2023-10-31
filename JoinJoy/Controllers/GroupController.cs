@@ -226,15 +226,61 @@ namespace JoinJoy.Controllers
         public IHttpActionResult JoinGroupList(int? groupId)
         {
             var leader = db.Groups.Where(m => m.GroupId == groupId).Select(m => new {id = m.MemberId,name = m.Member.Nickname });
-            var data = db.GroupParticipants
+            var member = db.GroupParticipants
               .Where(gp => gp.GroupId == groupId)
               .Join(db.Members,
                     gp => gp.MemberId,
                     mem => mem.Id,
                     (gp, mem) => new { Id = gp.MemberId, NickName = mem.Nickname })
               .ToList();
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳揪團成員",leader, data });
-            
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳揪團成員",leader, member });
+        }
+        #endregion
+        /// <summary>
+        /// 審核團員
+        /// </summary>
+        /// <param name="groupId">團隊id</param>
+        /// <param name="memberId">受審者id</param>
+        /// <param name="status">0="審查中",1="已加入",2="已拒絕"</param>
+        /// <returns></returns>
+        #region"審核團員"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("reviewGroup")]
+        public IHttpActionResult ReviewGroup(int groupId, int memberId, EnumList.JoinGroupState status)
+        {
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int currentUserId = (int)userToken["Id"];
+
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
+
+            //檢查團隊是否存在
+            if (group == null)
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
+
+            //檢查當前用戶是否是團長
+            if (group.MemberId != currentUserId)
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有團長可以審核團員" });
+
+            var joinRequest = db.GroupParticipants.FirstOrDefault(gp => gp.GroupId == groupId && gp.MemberId == memberId);
+
+            //檢查入團申請是否存在
+            if (joinRequest == null)
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "入團申請不存在" });
+
+            //根據status更新入團申請的狀態
+            if (status == EnumList.JoinGroupState.已加入)
+            {
+                joinRequest.AttendanceStatus = EnumList.JoinGroupState.已加入;
+            }
+            else if (status == EnumList.JoinGroupState.已拒絕)
+            {
+                db.GroupParticipants.Remove(joinRequest);
+            }
+            //如果status為審核中，則不需要進行任何操作
+
+            db.SaveChanges();
+            return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = $"入團申請的狀態已更新為：{status.ToString()}。" });
         }
         #endregion
     }
