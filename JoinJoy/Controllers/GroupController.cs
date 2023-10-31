@@ -217,7 +217,7 @@ namespace JoinJoy.Controllers
         /// <summary>
         /// 列出所有成員(包含審核及未審核)
         /// </summary>
-        /// <param name="groupId">帶入groupId</param>
+        /// <param name="groupId">帶入groupId,status:0="審查中",1="已加入",2="已拒絕"</param>
         /// <returns></returns>
         #region "JoinGroupList"
         [HttpGet]
@@ -231,9 +231,9 @@ namespace JoinJoy.Controllers
               .Join(db.Members,
                     gp => gp.MemberId,
                     mem => mem.Id,
-                    (gp, mem) => new { Id = gp.MemberId, NickName = mem.Nickname })
+                    (gp, mem) => new { id = gp.MemberId, nickName = mem.Nickname,status=gp.AttendanceStatus })
               .ToList();
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳揪團成員",leader, member });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳揪團成員", data = new { leader, member } });
         }
         #endregion
         /// <summary>
