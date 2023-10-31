@@ -13,7 +13,7 @@ namespace JoinJoy.Models.ViewModels
         [Required]
         public string newPaswrd { get; set; }
         [Required]
-        [Compare("newPasswrd", ErrorMessage = "密碼和確認密碼不匹配")]
+        [Compare("newPaswrd", ErrorMessage = "密碼和確認密碼不匹配")]
         public string confPaswrd { get; set; }
     }
 }
