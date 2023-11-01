@@ -26,6 +26,7 @@ namespace JoinJoy.Models.ViewModels
         public bool tutorialTag { get; set; } = false;  // 教學團(預設false)
         public bool casualTag { get; set; } = false;  // 輕鬆(預設false)
         public bool competitiveTag { get; set; } = false;  // 競技(預設false)
+        public bool isPrivate { get; set; } = false;  // 是否為私人團(預設false)
         //public DateTime creationDate { get; set; } = DateTime.Now;  // 創建時間(自動生成)
 
     }

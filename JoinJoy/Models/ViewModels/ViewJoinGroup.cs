@@ -9,6 +9,5 @@ namespace JoinJoy.Models.ViewModels
     {
         public int? groupId { get; set; }
         public int initNum { get; set; } 
-        public bool isPrivate { get; set; }
     }
 }

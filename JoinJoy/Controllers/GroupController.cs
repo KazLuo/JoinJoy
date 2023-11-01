@@ -68,7 +68,7 @@ namespace JoinJoy.Controllers
                 Casual = viewGroup.casualTag,
                 Competitive = viewGroup.competitiveTag,
                 GroupState = EnumList.GroupState.開團中,
-                isPrivate = false
+                isPrivate = viewGroup.isPrivate
 
             };
 
@@ -152,74 +152,10 @@ namespace JoinJoy.Controllers
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true,  message = "讀取留言成功",data });
         }
         #endregion
-        ///// <summary>
-        ///// 申請入團
-        ///// </summary>
-        ///// <param name="groupId">帶入groupId</param>
-        ///// <returns></returns>
-        //#region "JoinGroup"
-        //[HttpPost]
-        //[JwtAuthFilter]
-        //[Route("join")]
-        //public IHttpActionResult JoinGroup(int? groupId)
-        //{
-        //    var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
-        //    int memberId = (int)userToken["Id"];
-        //    var member = db.Members.FirstOrDefault(m => m.Id == memberId);
-
-        //    var group = db.Groups.FirstOrDefault(m => m.GroupId == groupId);
-        //    //當用戶不存在時
-        //    if(member == null)
-        //    {
-        //        return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
-        //    }
-        //    //開團尚未開放時
-        //    if (group == null)
-        //    {
-        //        return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "該團尚未開放" });
-        //    }
-        //    //確保隊長不能申請入隊
-        //    if (group.MemberId == memberId)
-        //    {
-        //        return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "隊長不能申請入隊" });
-        //    }
-
-        //    //判斷是否為開團狀態
-        //    if (group.GroupState == EnumList.GroupState.開團中)
-        //    {
-        //        if(group.CurrentParticipants >= group.MaxParticipants)
-        //        {
-        //            return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "已經滿團囉!" });
-        //        }
-        //        var isInGroup = db.GroupParticipants.Any(m => m.GroupId == groupId && m.MemberId == memberId);
-        //        if (isInGroup)
-        //        {
-        //            return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "不可以重複申請入團哦!" });
-        //        }
-        //        var memberJoin = new GroupParticipant
-        //        {
-        //            GroupId = (int)groupId,
-        //            MemberId = memberId,
-
-        //        };
-
-        //        group.CurrentParticipants += 1;
-        //        db.GroupParticipants.Add(memberJoin);
-        //        db.SaveChanges();
-        //        return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "已經加入成功囉!",joinStatus = memberJoin.AttendanceStatus.ToString() });
-
-        //    }
-        //    else
-        //    {
-        //        return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該團已送出預約，下次請早!" });
-        //    }
-
-        //}
-        //#endregion
         /// <summary>
         /// 申請入團
         /// </summary>
-        /// <param name="viewJoinGroup">帶入groupId,附帶人數</param>
+        /// <param name="viewJoinGroup"></param>
         /// <returns></returns>
         #region "JoinGroup"
         [HttpPost]
@@ -231,11 +167,7 @@ namespace JoinJoy.Controllers
             int memberId = (int)userToken["Id"];
             var member = db.Members.FirstOrDefault(m => m.Id == memberId);
             var group = db.Groups.FirstOrDefault(m => m.GroupId == viewJoinGroup.groupId);
-            //確保隊長不能申請入隊
-            if (group.MemberId == memberId)
-            {
-                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "隊長不能申請入隊" });
-            }
+
             if (member == null)
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
@@ -248,7 +180,7 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該團已送出預約，下次請早!" });
             }
-            if (group.CurrentParticipants + viewJoinGroup.initNum+1 > group.MaxParticipants)
+            if (group.CurrentParticipants + viewJoinGroup.initNum > group.MaxParticipants)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "已經滿團囉!" });
             }
@@ -261,15 +193,12 @@ namespace JoinJoy.Controllers
             {
                 GroupId = (int)viewJoinGroup.groupId,
                 MemberId = memberId,
-                InitMember = viewJoinGroup.initNum
-
+                InitMember = viewJoinGroup.initNum  // 儲存申請者帶的朋友數量
             });
-            
-            group.CurrentParticipants += viewJoinGroup.initNum+1;
-            db.SaveChanges();
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = $"已經成功加入{viewJoinGroup.initNum+1}名成員!" });
-        }
 
+            db.SaveChanges();
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = $"已經成功申請入團，待審核!" });
+        }
 
         #endregion
         /// <summary>
@@ -322,33 +251,35 @@ namespace JoinJoy.Controllers
         {
             var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
             int currentUserId = (int)userToken["Id"];
-
             var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
 
-            //檢查團隊是否存在
             if (group == null)
+            {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
+            }
 
-            //檢查當前用戶是否是團長
             if (group.MemberId != currentUserId)
+            {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有團長可以審核團員" });
+            }
 
             var joinRequest = db.GroupParticipants.FirstOrDefault(gp => gp.GroupId == groupId && gp.MemberId == memberId);
 
-            //檢查入團申請是否存在
             if (joinRequest == null)
+            {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "入團申請不存在" });
-
-            //根據status更新入團申請的狀態
+            }
+            //如果審核為團員後，才可以加入group中
             if (status == EnumList.JoinGroupState.團員)
             {
                 joinRequest.AttendanceStatus = EnumList.JoinGroupState.團員;
+                int totalParticipants = 1 + joinRequest.InitMember;  // 申請者本身加上他的朋友
+                group.CurrentParticipants += totalParticipants;
             }
             else if (status == EnumList.JoinGroupState.已拒絕)
             {
                 db.GroupParticipants.Remove(joinRequest);
             }
-            //如果status為審核中，則不需要進行任何操作
 
             db.SaveChanges();
             return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = $"入團申請的狀態已更新為：{status.ToString()}。" });

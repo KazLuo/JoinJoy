@@ -30,7 +30,7 @@ namespace JoinJoy.Models
         public DateTime EndTime { get; set; }
 
         public int MaxParticipants { get; set; }
-        public int CurrentParticipants { get; set; } = 1;  // 預設為團主
+        public int CurrentParticipants { get; set; }  // 預設為團主
 
         [MaxLength(100)]
         public string Description { get; set; }

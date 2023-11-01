@@ -12,7 +12,7 @@ using JoinJoy.Security;
 namespace JoinJoy.Controllers
 {
     [OpenApiTag("Store", Description = "店家相關功能")]
-    [RoutePrefix("store")]
+    [RoutePrefix("storeinfo")]
     public class StoreController : ApiController
     {
 
