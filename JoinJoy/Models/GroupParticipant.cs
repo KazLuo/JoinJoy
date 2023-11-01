@@ -21,6 +21,8 @@ namespace JoinJoy.Models
         [Display(Name = "會員ID")]
       /*  [ForeignKey("Members")]*/
         public int MemberId { get; set; }
+        [Display(Name = "內建人數")]
+        public int InitMember { get; set; }
 
         public DateTime JoinDate { get; set; } = DateTime.Now;
 

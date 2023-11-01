@@ -16,12 +16,13 @@ namespace JoinJoy.Controllers
     public class GroupController : ApiController
     {
         private Context db = new Context();
-        #region"CreateGroup"
+
         /// <summary>
         /// 開團表單
         /// </summary>
         /// <param name="viewGroup">主要用於填寫開團資料(不含遊戲預約店家預約現況)</param>
         /// <returns></returns>
+        #region"CreateGroup"
         [HttpPost]
         [Route("create")]
         [JwtAuthFilter]
@@ -66,14 +67,15 @@ namespace JoinJoy.Controllers
                 Tutorial = viewGroup.tutorialTag,
                 Casual = viewGroup.casualTag,
                 Competitive = viewGroup.competitiveTag,
-                GroupState = EnumList.GroupState.開團中
+                GroupState = EnumList.GroupState.開團中,
+                isPrivate = false
 
             };
 
             db.Groups.Add(newGroup);
             db.SaveChanges();
 
-            return Ok(new { statusCode = HttpStatusCode.OK, status = true, groupId = newGroup.GroupId, groupState = newGroup.GroupState.ToString(), message = "已成功開團!" });
+            return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "已成功開團!",data=new { groupId = newGroup.GroupId, groupState = newGroup.GroupState.ToString(),isPrivate=newGroup.isPrivate } });
         }
         #endregion
         /// <summary>
@@ -101,14 +103,14 @@ namespace JoinJoy.Controllers
 
             if (!groupId.HasValue)
             {
-                return Content(HttpStatusCode.BadRequest, new { message = "groupId 不能為 null" });
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false,  message = "groupId 不能為 null" });
             }
 
             // 使用 FirstOrDefault 檢查資料庫中是否存在該 groupId
             var groupInDb = db.Groups.FirstOrDefault(m => m.GroupId == groupId.Value);
             if (groupInDb == null)
             {
-                return Content(HttpStatusCode.BadRequest, new { message = "該團尚未開放，無法送出留言" });
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false,  message = "該團尚未開放，無法送出留言" });
             }
 
 
@@ -120,7 +122,7 @@ namespace JoinJoy.Controllers
             };
             db.GroupComments.Add(newgroupComment);
             db.SaveChanges();
-            return Ok(new { memberId = newgroupComment.MemberId, groupId = newgroupComment.GroupId, message = "已成功留言" });
+            return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "已成功留言", data = new { memberId = newgroupComment.MemberId, groupId = newgroupComment.GroupId } });
         }
         #endregion
 
@@ -138,16 +140,16 @@ namespace JoinJoy.Controllers
 
             if (groupId == null)
             {
-                return Content(HttpStatusCode.BadRequest, new { message = "沒有groupId" });
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "沒有groupId" });
             }
 
-            var data = db.GroupComments.Where(m => m.GroupId == groupId).Select(m => new { m.MemberId, m.CommentContent, m.CommentDate }).ToList();
+            var data = db.GroupComments.Where(m => m.GroupId == groupId).Select(m => new { userId=m.MemberId, m.CommentContent, m.CommentDate }).ToList();
             if (data == null || !data.Any())
             {
-                return Content(HttpStatusCode.BadRequest, new { message = "尚未有留言" });
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "尚未有留言" });
             }
 
-            return Content(HttpStatusCode.OK, new { groupId = groupId, message = "讀取留言成功", data });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true,  message = "讀取留言成功",data });
         }
         #endregion
         ///// <summary>
@@ -258,7 +260,9 @@ namespace JoinJoy.Controllers
             db.GroupParticipants.Add(new GroupParticipant
             {
                 GroupId = (int)viewJoinGroup.groupId,
-                MemberId = memberId
+                MemberId = memberId,
+                InitMember = viewJoinGroup.initNum
+
             });
             
             group.CurrentParticipants += viewJoinGroup.initNum+1;
@@ -271,7 +275,7 @@ namespace JoinJoy.Controllers
         /// <summary>
         /// 列出所有成員(包含審核及未審核)
         /// </summary>
-        /// <param name="groupId">帶入groupId,status:0="審查中",1="已加入",2="已拒絕"</param>
+        /// <param name="groupId">帶入groupId,status:0="團主",1="團員",2="審核中"</param>
         /// <returns></returns>
         #region "JoinGroupList"
         [HttpGet]
@@ -286,15 +290,21 @@ namespace JoinJoy.Controllers
                 // 團隊不存在的回應
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
             }
-            var leader = db.Groups.Where(m => m.GroupId == groupId).Select(m => new { id = m.MemberId, name = m.Member.Nickname });
+            
+            var leader = db.Groups.Where(m => m.GroupId == groupId).Select(m => new { userId = m.MemberId, userName = m.Member.Nickname,status= EnumList.JoinGroupState.團主.ToString(), initNum=m.InitMember }).ToList();
             var member = db.GroupParticipants
               .Where(gp => gp.GroupId == groupId)
               .Join(db.Members,
                     gp => gp.MemberId,
                     mem => mem.Id,
-                    (gp, mem) => new { id = gp.MemberId, nickName = mem.Nickname, status = gp.AttendanceStatus })
+                    (gp, mem) => new { userId = gp.MemberId, userName = mem.Nickname, status = gp.AttendanceStatus.ToString(), initNum = gp.InitMember })
               .ToList();
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳揪團成員", data = new { leader, member } });
+            // 合併leader和member的資料
+            var data = leader.Concat(member).ToList();
+
+
+
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳揪團成員",  data  });
         }
         #endregion
         /// <summary>
@@ -330,9 +340,9 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "入團申請不存在" });
 
             //根據status更新入團申請的狀態
-            if (status == EnumList.JoinGroupState.已加入)
+            if (status == EnumList.JoinGroupState.團員)
             {
-                joinRequest.AttendanceStatus = EnumList.JoinGroupState.已加入;
+                joinRequest.AttendanceStatus = EnumList.JoinGroupState.團員;
             }
             else if (status == EnumList.JoinGroupState.已拒絕)
             {

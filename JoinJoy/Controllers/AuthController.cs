@@ -169,7 +169,11 @@ namespace JoinJoy.Controllers
 
         //    return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "密碼修改成功" });
         //}
-
+        /// <summary>
+        /// 更改密碼
+        /// </summary>
+        /// <param name="viewPasswordChange">在會員詳細頁中修改密碼</param>
+        /// <returns></returns>
         //#endregion
         #region "更改密碼"
         [HttpPost]

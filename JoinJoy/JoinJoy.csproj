@@ -266,6 +266,14 @@
     <Compile Include="Migrations\202310310747420_add phone.Designer.cs">
       <DependentUpon>202310310747420_add phone.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202311010405426_add initmember.cs" />
+    <Compile Include="Migrations\202311010405426_add initmember.Designer.cs">
+      <DependentUpon>202311010405426_add initmember.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202311011501226_add isprivate.cs" />
+    <Compile Include="Migrations\202311011501226_add isprivate.Designer.cs">
+      <DependentUpon>202311011501226_add isprivate.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
     <Compile Include="Models\Context.cs" />
@@ -403,6 +411,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202310310747420_add phone.resx">
       <DependentUpon>202310310747420_add phone.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202311010405426_add initmember.resx">
+      <DependentUpon>202311010405426_add initmember.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202311011501226_add isprivate.resx">
+      <DependentUpon>202311011501226_add isprivate.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

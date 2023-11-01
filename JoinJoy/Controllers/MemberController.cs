@@ -16,6 +16,7 @@ namespace JoinJoy.Controllers
     public class MemberController : ApiController
     {
         private Context db = new Context();
+
         /// <summary>
         /// 獲取會員詳細資訊
         /// </summary>

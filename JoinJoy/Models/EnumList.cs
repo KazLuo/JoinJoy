@@ -15,9 +15,13 @@ namespace JoinJoy.Models
 
         public enum JoinGroupState
         {
+            團主,
+            團員,
             審核中,
-            已加入,
             已拒絕,
+
+            //已加入,
+            //已拒絕,
 
 
         }
