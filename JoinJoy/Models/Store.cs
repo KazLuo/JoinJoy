@@ -53,7 +53,7 @@ namespace JoinJoy.Models
         /// </summary>
         [Required(ErrorMessage = "{0}必填")]
         [Display(Name = "店家電話")]
-        public int Phone { get; set; }
+        public string Phone { get; set; }
 
         /// <summary>
         /// 營業開始時間

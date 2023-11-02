@@ -131,6 +131,91 @@ namespace JoinJoy.Controllers
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "會員詳細資訊已更新" });
         }
         #endregion
+        /// <summary>
+        /// 城市喜好
+        /// </summary>
+        /// <param name="cityPrefIds">輸入對應城市參數 1=基隆 2=新北 3=台北...</param>
+        /// <returns></returns>
+        #region"城市喜好"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("citypref")]
+        public IHttpActionResult UpdateCityPreferences([FromBody] List<int> cityPrefIds)
+        {
+            if (!ModelState.IsValid || cityPrefIds == null)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "資料格式錯誤。" });
+            }
 
+            if (cityPrefIds.Count > 3)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "城市喜好最多不能超過3項。" });
+            }
+
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int memberId = (int)userToken["Id"];
+
+            var member = db.Members.Include("CityPreferences").FirstOrDefault(m => m.Id == memberId);
+            if (member == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "會員不存在。" });
+            }
+
+            // 移除現有的城市喜好
+            db.MemberCityPrefs.RemoveRange(member.CityPreferences);
+
+            // 新增城市喜好
+            member.CityPreferences = cityPrefIds.Select(cityId => new MemberCityPref { MemberId = memberId, CityId = cityId }).ToList();
+
+            // 儲存變更
+            db.SaveChanges();
+
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "城市喜好更新成功。" });
+        }
+        #endregion
+        /// <summary>
+        /// 遊戲喜好
+        /// </summary>
+        /// <param name="gamePrefIds">輸入對照表對應遊戲喜好</param>
+        /// <returns></returns>
+        #region"遊戲喜好"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("gamepref")]
+        public IHttpActionResult UpdateGamePreferences([FromBody] List<int> gamePrefIds)
+        {
+            if (!ModelState.IsValid || gamePrefIds == null)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "資料格式錯誤。" });
+            }
+
+            if (gamePrefIds.Count > 3)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest,status = false, message = "遊戲喜好最多不能超過3項。" });
+            }
+
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int memberId = (int)userToken["Id"];
+
+            var member = db.Members.Include("GamePreferences").FirstOrDefault(m => m.Id == memberId);
+            if (member == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "會員不存在。" });
+            }
+
+            // 移除現有的遊戲喜好
+            db.MemberGamePrefs.RemoveRange(member.GamePreferences);
+
+            // 新增遊戲喜好
+            member.GamePreferences = gamePrefIds.Select(gameId => new MemberGamePref { MemberId = memberId, GameTypeId = gameId }).ToList();
+
+            // 儲存變更
+            db.SaveChanges();
+
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "遊戲喜好更新成功。" });
+        }
+        #endregion
+
+#
     }
 }

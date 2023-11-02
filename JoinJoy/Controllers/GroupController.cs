@@ -336,5 +336,117 @@ namespace JoinJoy.Controllers
             return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = $"入團申請的狀態已更新為：{status.ToString()}。" });
         }
         #endregion
+
+        /// <summary>
+        /// 查詢預約時段剩餘位置
+        /// </summary>
+        /// <param name="storeName">測試可以用"六角學院桌遊店"</param>
+        /// <param name="date">測試可以使用2023-11-01</param>
+        /// <returns></returns>
+        #region"查看店家可預約時段"
+        //可依照預約時段提供時間的版本
+        //[HttpPost]
+        //[Route("checkAvailability")]
+        //public IHttpActionResult CheckAvailability(string storeName, DateTime startTime, DateTime endTime)
+        //{
+        //    // 從資料庫中查找商店實體
+        //    var store = db.Stores.FirstOrDefault(s => s.Name == storeName);
+        //    if (store == null)
+        //    {
+        //        return Content(HttpStatusCode.NotFound, new { message = "Store not found." });
+        //    }
+
+        //    if (startTime.TimeOfDay < store.OpenTime || endTime.TimeOfDay > store.CloseTime)
+        //    {
+        //        return Content(HttpStatusCode.BadRequest, new { message = "預約時間超出店家營業時間範圍。" });
+        //    }
+
+        //    // 初始化可用座位的列表
+        //    var availabilityList = new List<object>();
+
+        //    // 計算每個小時段的剩餘座位
+        //    for (var hour = startTime; hour < endTime; hour = hour.AddHours(1))
+        //    {
+        //        var nextHour = hour.AddHours(1);
+        //        // 查詢該時段內所有的團體預約
+        //        var reservations = db.Groups.Where(g => g.StoreId == store.Id
+        //                                                && g.StartTime < nextHour
+        //                                                && g.EndTime > hour)
+        //                                        .ToList();
+
+        //        // 計算該時段內已預約的總人數
+        //        var reservedSeats = reservations.Sum(g => g.CurrentParticipants);
+
+        //        // 計算剩餘座位數
+        //        var remainingSeats = store.MaxPeople - reservedSeats;
+
+        //        // 如果剩餘座位數小於 0，設為 0
+        //        remainingSeats = Math.Max(remainingSeats, 0);
+
+        //        // 將該時段的剩餘座位數加入列表
+        //        availabilityList.Add(new
+        //        {
+        //            Time = $"{hour.ToString("HH:mm")}~{nextHour.ToString("HH:mm")}",
+        //            RemainingSeats = remainingSeats
+        //        });
+        //    }
+
+        //    // 返回每個小時的剩餘空間
+        //    return Ok(availabilityList);
+        //}
+        //依照店家營業時間提供時間的版本
+        [HttpGet]
+        [Route("checkability/{storeName}/{date}")]
+        public IHttpActionResult GetStoreOperatingHoursWithAvailability(string storeName, DateTime date)
+        {
+            // 從資料庫中查找商店實體
+            var store = db.Stores.FirstOrDefault(s => s.Name == storeName);
+            if (store == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到指定的店家"});
+            }
+
+            // 初始化營業時段及剩餘座位的列表
+            var operatingHoursList = new List<object>();
+            var startTime = date.Date.Add(store.OpenTime); // 指定日期加上營業開始時間
+            var endTime = date.Date.Add(store.CloseTime); // 指定日期加上營業結束時間
+
+            // 計算每個小時段的營業時間及剩餘座位
+            for (var hour = startTime; hour < endTime; hour = hour.AddHours(1))
+            {
+                var nextHour = hour.AddHours(1);
+
+                // 查詢該時段內所有的團體預約
+                var reservations = db.Groups.Where(g => g.StoreId == store.Id
+                                                        && g.StartTime < nextHour
+                                                        && g.EndTime > hour
+                                                        && g.GroupState == EnumList.GroupState.已預約) // 假設 Status 為已確認的預約
+                                                .ToList();
+
+                // 計算該時段內已預約的總人數
+                var reservedSeats = reservations.Sum(g => g.CurrentParticipants);
+
+                // 計算剩餘座位數
+                var remainingSeats = store.MaxPeople - reservedSeats;
+
+                // 如果剩餘座位數小於 0，設為 0
+                remainingSeats = Math.Max(remainingSeats, 0);
+
+                operatingHoursList.Add(new
+                {
+                    time = $"{hour.ToString("HH:mm")}~{nextHour.ToString("HH:mm")}",
+                    seat = remainingSeats
+                });
+            }
+
+            // 返回店家指定日期的每個小時營業時段及其剩餘座位
+            
+            return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳",data= operatingHoursList });
+        }
+        #endregion
+
+
+
+
     }
 }

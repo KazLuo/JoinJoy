@@ -274,6 +274,10 @@
     <Compile Include="Migrations\202311011501226_add isprivate.Designer.cs">
       <DependentUpon>202311011501226_add isprivate.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202311020754096_fix sotre.cs" />
+    <Compile Include="Migrations\202311020754096_fix sotre.Designer.cs">
+      <DependentUpon>202311020754096_fix sotre.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
     <Compile Include="Models\Context.cs" />
@@ -418,6 +422,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202311011501226_add isprivate.resx">
       <DependentUpon>202311011501226_add isprivate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202311020754096_fix sotre.resx">
+      <DependentUpon>202311020754096_fix sotre.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
