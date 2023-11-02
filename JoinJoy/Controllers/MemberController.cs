@@ -18,7 +18,7 @@ namespace JoinJoy.Controllers
         private Context db = new Context();
 
         /// <summary>
-        /// 獲取會員詳細資訊
+        /// 獲取會員詳細資訊(自己的)
         /// </summary>
         /// <returns></returns>
         #region"GetMemberDetails"
@@ -35,17 +35,47 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
             }
-
-            return Ok(new
-            {
-                memberId = member.Id,
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功",data=new {
+                userId = member.Id,
                 nickname = member.Nickname,
                 account = member.Account,
                 introduce = member.Introduce,
-                gamePref = member.GamePreferences.Select(m => m.GameType.TypeName),  
-                cityPref = member.CityPreferences.Select(m => m.City.CityName)      
+                gamePref = member.GamePreferences.Select(m => m.GameType.TypeName),
+                cityPref = member.CityPreferences.Select(m => m.City.CityName)
+            } });
+            
+        }
+        /// <summary>
+        /// 獲取會員詳細資訊(取得其他會員資訊)
+        /// </summary>
+        /// <returns></returns>
+        #region"GetMemberDetails"
+        [HttpGet]
+        [Route("memberDetails/{userId}")]
+        public IHttpActionResult GetOtherMemberDetails(int? userId)
+        {
+
+            var member = db.Members.FirstOrDefault(m => m.Id == userId);
+            if (member == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
+            }
+
+            return Content(HttpStatusCode.OK, new
+            {
+                statusCode = HttpStatusCode.OK,
+                status = true,
+                message = "回傳成功",
+                data = new
+                {//少一個photo
+                    nickname = member.Nickname,
+                    introduce = member.Introduce,
+                    gamePref = member.GamePreferences.Select(m => m.GameType.TypeName),
+                    cityPref = member.CityPreferences.Select(m => m.City.CityName)
+                }
             });
         }
+        #endregion
         #endregion
         /// <summary>
         /// 修改會員詳細資訊

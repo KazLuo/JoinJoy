@@ -122,7 +122,7 @@ namespace JoinJoy.Controllers
             };
             db.GroupComments.Add(newgroupComment);
             db.SaveChanges();
-            return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "已成功留言", data = new { memberId = newgroupComment.MemberId, groupId = newgroupComment.GroupId } });
+            return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "已成功留言", data = new { userId = newgroupComment.MemberId, groupId = newgroupComment.GroupId } });
         }
         #endregion
 
@@ -220,13 +220,13 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
             }
             
-            var leader = db.Groups.Where(m => m.GroupId == groupId).Select(m => new { userId = m.MemberId, userName = m.Member.Nickname,status= EnumList.JoinGroupState.leader.ToString(), initNum=m.InitMember }).ToList();
+            var leader = db.Groups.Where(m => m.GroupId == groupId).Select(m => new { memberId = m.MemberId, userName = m.Member.Nickname,status= EnumList.JoinGroupState.leader.ToString(), initNum=m.InitMember }).ToList();
             var member = db.GroupParticipants
               .Where(gp => gp.GroupId == groupId)
               .Join(db.Members,
                     gp => gp.MemberId,
                     mem => mem.Id,
-                    (gp, mem) => new { userId = gp.MemberId, userName = mem.Nickname, status = gp.AttendanceStatus.ToString(), initNum = gp.InitMember })
+                    (gp, mem) => new { memberId = gp.MemberId, userName = mem.Nickname, status = gp.AttendanceStatus.ToString(), initNum = gp.InitMember })
               .ToList();
             // 合併leader和member的資料
             var data = leader.Concat(member).ToList();
@@ -303,7 +303,7 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有團長可以審核團員" });
             }
 
-            var joinRequest = db.GroupParticipants.FirstOrDefault(gp => gp.GroupId == groupId && gp.MemberId == viewReviewGroup.memberId);
+            var joinRequest = db.GroupParticipants.FirstOrDefault(gp => gp.GroupId == groupId && gp.MemberId == viewReviewGroup.userId);
 
             if (joinRequest == null)
             {
@@ -311,7 +311,7 @@ namespace JoinJoy.Controllers
             }
 
             // 將前端傳送的具名值轉換為對應的枚舉值
-            if (!Enum.TryParse(viewReviewGroup.statusName, out EnumList.JoinGroupState status))
+            if (!Enum.TryParse(viewReviewGroup.status, out EnumList.JoinGroupState status))
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "無效的審核狀態" });
             }

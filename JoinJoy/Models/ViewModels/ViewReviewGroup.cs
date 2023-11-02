@@ -8,7 +8,7 @@ namespace JoinJoy.Models.ViewModels
     public class ViewReviewGroup
     {
 
-        public int memberId { get; set; }
-        public string statusName { get;set;}
+        public int userId { get; set; }
+        public string status { get;set;}
     }
 }
