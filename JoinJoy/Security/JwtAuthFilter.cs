@@ -32,7 +32,7 @@ namespace JoinJoy.Security
                 if (request.Headers.Authorization == null || request.Headers.Authorization.Scheme != "Bearer")
                 {
                     // 可考慮配合前端專案開發期限，不修改 StatusCode 預設 200，將請求失敗搭配 Status: false 供前端判斷
-                    string messageJson = JsonConvert.SerializeObject(new { Status = false, Message = "請重新登入" }); // JwtToken 遺失，需導引重新登入
+                    string messageJson = JsonConvert.SerializeObject(new { status = false, message = "請重新登入" }); // JwtToken 遺失，需導引重新登入
                     var errorMessage = new HttpResponseMessage()
                     {
                         // StatusCode = System.Net.HttpStatusCode.Unauthorized, // 401
@@ -54,7 +54,7 @@ namespace JoinJoy.Security
                         // 檢查有效期限是否過期，如 JwtToken 過期，需導引重新登入
                         if (IsTokenExpired(jwtObject["Exp"].ToString()))
                         {
-                            string messageJson = JsonConvert.SerializeObject(new { Status = false, Message = "請重新登入" }); // JwtToken 過期，需導引重新登入
+                            string messageJson = JsonConvert.SerializeObject(new { status = false, message = "請重新登入" }); // JwtToken 過期，需導引重新登入
                             var errorMessage = new HttpResponseMessage()
                             {
                                 // StatusCode = System.Net.HttpStatusCode.Unauthorized, // 401

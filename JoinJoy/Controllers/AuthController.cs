@@ -178,6 +178,7 @@ namespace JoinJoy.Controllers
         #region "更改密碼"
         [HttpPost]
         [JwtAuthFilter]
+       
         [Route("changePaswrd")]
         public IHttpActionResult ChangePassword(ViewPasswordChange viewPasswordChange)
         {
@@ -224,7 +225,35 @@ namespace JoinJoy.Controllers
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "密碼修改成功" });
         }
         #endregion
+        /// <summary>
+        /// 確認登入狀態
+        /// </summary>
+        /// <returns></returns>
+        #region"確認入狀態"
+        [HttpGet]
+        [JwtAuthFilter]
+        [Route("checkLoginStatus")]
+        public IHttpActionResult CheckLoginStatus()
+        {
+            // 假設 JwtAuthFilter 會檢查 JWT 的有效性
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            if (userToken != null)
+            {
+                // 取得用戶資訊，如果需要的話
+                int userId = (int)userToken["Id"];
+                var user = db.Members.FirstOrDefault(m => m.Id == userId);
+                if (user != null)
+                {
+                    // 用戶已登入且 JWT 是有效的
+                    return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "用戶已登入。" });
+                }
+            }
 
+            // 如果 JWT 無效或者找不到對應的用戶
+            
+            return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "用戶未登入或會話已過期。" });
+        }
+        #endregion
 
 
     }

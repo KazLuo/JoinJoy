@@ -27,7 +27,7 @@ namespace JoinJoy.Models
         public DateTime JoinDate { get; set; } = DateTime.Now;
 
         [Display(Name = "出席狀態")]
-        public EnumList.JoinGroupState AttendanceStatus { get; set; } = EnumList.JoinGroupState.審核中;
+        public EnumList.JoinGroupState AttendanceStatus { get; set; } = EnumList.JoinGroupState.pending;
         //[JsonIgnore]
         //public virtual ICollection<Member> Members { get; set; }
         [JsonIgnore]
