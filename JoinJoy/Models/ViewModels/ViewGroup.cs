@@ -8,6 +8,7 @@ namespace JoinJoy.Models.ViewModels
 {
     public class ViewGroup
     {
+        public int storeId { get; set; }  // 預約店家名
         [MaxLength(50)]
         public string groupName { get; set; }  // 團名
         public DateTime startTime { get; set; }  // 開始時間
@@ -27,7 +28,9 @@ namespace JoinJoy.Models.ViewModels
         public bool casualTag { get; set; } = false;  // 輕鬆(預設false)
         public bool competitiveTag { get; set; } = false;  // 競技(預設false)
         public bool isPrivate { get; set; } = false;  // 是否為私人團(預設false)
-        //public DateTime creationDate { get; set; } = DateTime.Now;  // 創建時間(自動生成)
+        // 新增的屬性，用於存儲選擇的遊戲 ID 列表
+        public List<int> GameIds { get; set; }
+        public DateTime creationDate { get; set; } = DateTime.Now;  // 創建時間(自動生成)
 
     }
 }

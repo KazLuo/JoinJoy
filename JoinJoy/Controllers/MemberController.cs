@@ -8,6 +8,12 @@ using System.Net.Http;
 using System.Web.Http;
 using JoinJoy.Models;
 using JoinJoy.Models.ViewModels;
+using System.Threading.Tasks;
+using System.Web;
+using System.IO;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace JoinJoy.Controllers
 {
@@ -35,15 +41,22 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
             }
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功",data=new {
-                userId = member.Id,
-                nickname = member.Nickname,
-                account = member.Account,
-                introduce = member.Introduce,
-                gamePref = member.GamePreferences.Select(m => m.GameType.TypeName),
-                cityPref = member.CityPreferences.Select(m => m.City.CityName)
-            } });
-            
+            return Content(HttpStatusCode.OK, new
+            {
+                statusCode = HttpStatusCode.OK,
+                status = true,
+                message = "回傳成功",
+                data = new
+                {
+                    userId = member.Id,
+                    nickname = member.Nickname,
+                    account = member.Account,
+                    introduce = member.Introduce,
+                    gamePref = member.GamePreferences.Select(m => m.GameType.TypeName),
+                    cityPref = member.CityPreferences.Select(m => m.City.CityName)
+                }
+            });
+
         }
         /// <summary>
         /// 獲取會員詳細資訊(取得其他會員資訊)
@@ -191,7 +204,7 @@ namespace JoinJoy.Controllers
 
             if (gamePrefIds.Count > 3)
             {
-                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest,status = false, message = "遊戲喜好最多不能超過3項。" });
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "遊戲喜好最多不能超過3項。" });
             }
 
             var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
@@ -215,7 +228,98 @@ namespace JoinJoy.Controllers
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "遊戲喜好更新成功。" });
         }
         #endregion
+        #region"上傳頭像"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("uploadimg")]
+        public async Task<IHttpActionResult> UploadProfile()
+        {
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int memberId = (int)userToken["Id"];
 
-#
+            var user = db.Members.FirstOrDefault(m => m.Id == memberId);
+            if (user == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
+            }
+
+            // 檢查請求是否包含 multipart/form-data。
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
+            }
+
+            // 檢查資料夾是否存在，若不存在則創建
+            string root = HttpContext.Current.Server.MapPath("~/upload/profile");
+            if (!Directory.Exists(root))
+            {
+                Directory.CreateDirectory(root);
+            }
+
+            try
+            {
+                // 讀取MIME資料
+                var provider = new MultipartMemoryStreamProvider();
+                await Request.Content.ReadAsMultipartAsync(provider);
+
+                // 獲取檔案擴展名，單檔案使用.FirstOrDefault()直接提取，多檔案需使用循環
+                string fileNameData = provider.Contents.FirstOrDefault().Headers.ContentDisposition.FileName.Trim('\"');
+                string fileType = fileNameData.Remove(0, fileNameData.LastIndexOf('.')); // 如 .jpg
+
+                // 定義檔案名稱
+                string fileName = "Member_" + memberId + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + fileType;
+
+                // 儲存圖片，單檔案使用.FirstOrDefault()直接提取，多檔案需使用循環
+                var fileBytes = await provider.Contents.FirstOrDefault().ReadAsByteArrayAsync();
+                var outputPath = Path.Combine(root, fileName);
+                using (var output = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+                {
+                    await output.WriteAsync(fileBytes, 0, fileBytes.Length);
+                }
+
+                // 讀取圖片並調整尺寸
+                using (var image = SixLabors.ImageSharp.Image.Load(outputPath))
+                {
+                    // 調整圖片尺寸至標準尺寸，例如：128x128像素
+                    image.Mutate(x => x.Resize(128, 128));
+
+                    // 檢查圖片大小，如果大於限制則壓縮圖片 (例如：不超過2MB)
+                    if (fileBytes.Length > 2 * 1024 * 1024)
+                    {
+                        // 壓縮圖片以降低大小
+                        // 可以使用ImageSharp的壓縮功能或其他工具來完成
+                    }
+
+                    // 儲存調整後的圖片
+                    image.Save(outputPath);
+                }
+
+                // 更新會員資料表中的圖片路徑
+                var member = db.Members.FirstOrDefault(m => m.Id == memberId);
+                if (member != null)
+                {
+                    member.Photo = fileName; // 儲存檔案名稱
+                    db.SaveChanges(); // 儲存變更到資料庫
+                }
+
+                return Ok(new
+                {
+                    Status = true,
+                    Data = new
+                    {
+                        FileName = fileName
+                    },
+                    Message = "檔案上傳成功。" // 繁體中文提示訊息
+                });
+            }
+            catch (Exception e)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = true, message = "上傳失敗，請再試一次。" });
+            }
+        }
+        #endregion
     }
+
+
+
 }
