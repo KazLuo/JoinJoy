@@ -164,9 +164,7 @@ namespace JoinJoy.Models
         public virtual ICollection<StoreRating> StoreRatings { get; set; }
         // 此店家主辦的所有團體活動
         [JsonIgnore]
-        public virtual ICollection<Group> HostedGroups { get; set; } 
-
-
-
+        public virtual ICollection<Group> HostedGroups { get; set; }
+        public string Photo { get; internal set; }
     }
 }

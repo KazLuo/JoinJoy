@@ -284,6 +284,10 @@
     <Compile Include="Migrations\202311020754096_fix sotre.Designer.cs">
       <DependentUpon>202311020754096_fix sotre.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202311030656419_1.cs" />
+    <Compile Include="Migrations\202311030656419_1.Designer.cs">
+      <DependentUpon>202311030656419_1.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
     <Compile Include="Models\Context.cs" />
@@ -431,6 +435,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202311020754096_fix sotre.resx">
       <DependentUpon>202311020754096_fix sotre.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202311030656419_1.resx">
+      <DependentUpon>202311030656419_1.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

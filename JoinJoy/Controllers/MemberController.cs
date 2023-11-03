@@ -228,6 +228,11 @@ namespace JoinJoy.Controllers
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "遊戲喜好更新成功。" });
         }
         #endregion
+
+        /// <summary>
+        /// 上傳會員頭像
+        /// </summary>
+        /// <returns></returns>
         #region"上傳頭像"
         [HttpPost]
         [JwtAuthFilter]
@@ -281,7 +286,7 @@ namespace JoinJoy.Controllers
                 using (var image = SixLabors.ImageSharp.Image.Load(outputPath))
                 {
                     // 調整圖片尺寸至標準尺寸，例如：128x128像素
-                    image.Mutate(x => x.Resize(128, 128));
+                    image.Mutate(x => x.Resize(145, 145));
 
                     // 檢查圖片大小，如果大於限制則壓縮圖片 (例如：不超過2MB)
                     if (fileBytes.Length > 2 * 1024 * 1024)
@@ -304,18 +309,57 @@ namespace JoinJoy.Controllers
 
                 return Ok(new
                 {
-                    Status = true,
-                    Data = new
+                    statusCode = HttpStatusCode.OK,
+                    status = true,
+                    message = "檔案上傳成功。", 
+                    data = new
                     {
                         FileName = fileName
                     },
-                    Message = "檔案上傳成功。" // 繁體中文提示訊息
+                    
                 });
             }
             catch (Exception e)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = true, message = "上傳失敗，請再試一次。" });
             }
+        }
+        #endregion
+        /// <summary>
+        /// 取得會員頭像
+        /// </summary>
+        /// <param name="memberId">輸入會員即可(測試可以用6號)</param>
+        /// <returns></returns>
+        #region "獲取會員頭像"
+        [HttpGet]
+        [Route("profileimg/{memberId}")]
+        public IHttpActionResult GetProfileImage(int memberId)
+        {
+            var member = db.Members.FirstOrDefault(m => m.Id == memberId);
+            if (member == null || string.IsNullOrEmpty(member.Photo))
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在或未設置頭像。" });
+            }
+
+            string root = HttpContext.Current.Server.MapPath("~/upload/profile");
+            var filePath = Path.Combine(root, member.Photo);
+            if (!File.Exists(filePath))
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "文件不存在。" });
+            }
+
+            // 讀取圖片文件為位元組數組
+            var fileBytes = File.ReadAllBytes(filePath);
+            // 獲取MIME類型
+            var contentType = MimeMapping.GetMimeMapping(filePath);
+            // 創建一個HttpResponseMessage，設定Content為圖片的位元組數組
+            var result = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(fileBytes)
+            };
+            result.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+
+            return ResponseMessage(result);
         }
         #endregion
     }
