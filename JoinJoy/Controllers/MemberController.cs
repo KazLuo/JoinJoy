@@ -328,14 +328,14 @@ namespace JoinJoy.Controllers
         /// <summary>
         /// 取得會員頭像
         /// </summary>
-        /// <param name="memberId">輸入會員即可(測試可以用6號)</param>
+        /// <param name="userId">輸入會員即可(測試可以用6號)</param>
         /// <returns></returns>
         #region "獲取會員頭像"
         [HttpGet]
-        [Route("profileimg/{memberId}")]
-        public IHttpActionResult GetProfileImage(int memberId)
+        [Route("profileimg/{userId}")]
+        public IHttpActionResult GetProfileImage(int userId)
         {
-            var member = db.Members.FirstOrDefault(m => m.Id == memberId);
+            var member = db.Members.FirstOrDefault(m => m.Id == userId);
             if (member == null || string.IsNullOrEmpty(member.Photo))
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在或未設置頭像。" });

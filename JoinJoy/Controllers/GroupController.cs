@@ -78,7 +78,7 @@ namespace JoinJoy.Controllers
         //    return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "已成功開團!",data=new { groupId = newGroup.GroupId, groupState = newGroup.GroupState.ToString(),isPrivate=newGroup.isPrivate } });
         //}
         [HttpPost]
-        [Route("api/groups/create-with-games")]
+        [Route("create")]
         public IHttpActionResult CreateGroupWithGames([FromBody] ViewGroup model)
         {
             var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
@@ -102,6 +102,13 @@ namespace JoinJoy.Controllers
             if (model.GameIds.Count > 5)
             {
                 return BadRequest("您只能選擇最多五款遊戲。");
+            }
+
+            var store = db.Stores.FirstOrDefault(s => s.Id == model.storeId);
+            if (store == null)
+            {
+                // 如果 storeId 不存在，返回一個錯誤訊息
+                return BadRequest($"店家 ID {model.storeId} 不存在。");
             }
 
             var group = new Group
@@ -131,9 +138,16 @@ namespace JoinJoy.Controllers
 
             db.Groups.Add(group);
             db.SaveChanges(); // 儲存團體以獲取 GroupId
-
             foreach (var gameId in model.GameIds)
             {
+                // 在這裡檢查每個 gameId 是否存在於 StoreInventories 表中
+                var storeInventory = db.StoreInventories.FirstOrDefault(si => si.Id == gameId);
+                if (storeInventory == null)
+                {
+                    // 如果 gameId 不存在，返回一個錯誤訊息
+                    return BadRequest($"遊戲 ID {gameId} 不存在於店家庫存中。");
+                }
+
                 var groupGame = new GroupGame
                 {
                     GroupId = group.GroupId,
