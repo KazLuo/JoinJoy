@@ -451,7 +451,121 @@ namespace JoinJoy.Controllers
         //    }
         //}
         #endregion
+        /// <summary>
+        /// 取得開團詳細資訊
+        /// </summary>
+        /// <param name="groupId">測試可用27</param>
+        /// <returns></returns>
+        #region"取得開團資訊"
+        [HttpGet]
+        [Route("detail/{groupId}")]
+        public IHttpActionResult GetGroupDetails(int groupId)
+        {
+            var groupWithGames = db.Groups
+                                   .Include("GroupGames.StoreInventory.Game")  // 假設你使用的是 EF6
+                                   .Where(g => g.GroupId == groupId)
+                                   .Select(g => new
+                                   {
+                                       storeId =g.StoreId,
+                                       groupName = g.GroupName,
+                                       startTime = g.StartTime,
+                                       endTime = g.EndTime,
+                                       maxParticipants = g.MaxParticipants,
+                                       description = g.Description,
+                                       isHomeGroup = g.IsHomeGroup,
+                                       address = g.Address,
+                                       initMember = g.InitMember,
+                                       beginner = g.Beginner,
+                                       expert = g.Expert,
+                                       practice = g.Practice,
+                                       open = g.Open,
+                                       tutorial = g.Tutorial,
+                                       casual = g.Casual,
+                                       competitive = g.Competitive,
+                                       isPrivate = g.isPrivate,
+                                       games = g.GroupGames.Select(gg => gg.StoreInventory.GameDetails.Name).ToList(),
+                                       createDate = g.CreationDate
+                                   })
+                                   .FirstOrDefault();
 
+            if (groupWithGames == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(groupWithGames); // 直接返回匿名類型的物件，將由全局的 JSON 序列化設置控制命名
+        }
+
+        #endregion
+        /// <summary>
+        /// 更新開團資訊
+        /// </summary>
+        /// <param name="groupId">團體ID</param>
+        /// <param name="model">更新的團體資訊</param>
+        /// <returns></returns>
+        #region "更新開團資訊"
+        [HttpPost]
+        [Route("update/{groupId}")]
+        public IHttpActionResult UpdateGroupDetails(int groupId, [FromBody] ViewGroup model)
+        {
+            var group = db.Groups.Include("GroupGames").FirstOrDefault(g => g.GroupId == groupId);
+            if (group == null)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // 更新團體的基本資訊
+            group.StoreId = model.storeId;
+            group.GroupName = model.groupName;
+            group.StartTime = model.startTime;
+            group.EndTime = model.endTime;
+            group.MaxParticipants = model.totalMemberNum;
+            group.Description = model.description;
+            group.IsHomeGroup = model.isHomeGroup;
+            group.Address = model.place;
+            group.InitMember = model.initNum;
+            group.Beginner = model.beginnerTag;
+            group.Expert = model.expertTag;
+            group.Practice = model.practiceTag;
+            group.Open = model.openTag;
+            group.Tutorial = model.tutorialTag;
+            group.Casual = model.casualTag;
+            group.Competitive = model.competitiveTag;
+            group.isPrivate = model.isPrivate;
+
+            // 更新遊戲列表
+            // 假設 model.GameIds 包含了所有更新後的遊戲ID
+            var existingGameIds = group.GroupGames.Select(gg => gg.StoreInventoryId).ToList();
+            var newGameIds = model.GameIds.Except(existingGameIds).ToList();
+            var removedGameIds = existingGameIds.Except(model.GameIds).ToList();
+
+            // 移除不再選擇的遊戲
+            foreach (var gameId in removedGameIds)
+            {
+                var gameToRemove = group.GroupGames.FirstOrDefault(gg => gg.StoreInventoryId == gameId);
+                if (gameToRemove != null)
+                {
+                    db.GroupGames.Remove(gameToRemove);
+                }
+            }
+
+            // 加入新選擇的遊戲
+            foreach (var gameId in newGameIds)
+            {
+                var gameToAdd = new GroupGame { GroupId = groupId, StoreInventoryId = gameId };
+                db.GroupGames.Add(gameToAdd);
+            }
+
+            db.SaveChanges();
+
+            return Ok(new { message = "開團資訊已更新。" });
+        }
+        #endregion
 
 
     }
