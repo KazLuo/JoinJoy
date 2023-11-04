@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Data.Entity;
 
 namespace JoinJoy.Controllers
 {
@@ -187,14 +188,14 @@ namespace JoinJoy.Controllers
 
             if (!groupId.HasValue)
             {
-                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false,  message = "groupId 不能為 null" });
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "groupId 不能為 null" });
             }
 
             // 使用 FirstOrDefault 檢查資料庫中是否存在該 groupId
             var groupInDb = db.Groups.FirstOrDefault(m => m.GroupId == groupId.Value);
             if (groupInDb == null)
             {
-                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false,  message = "該團尚未開放，無法送出留言" });
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該團尚未開放，無法送出留言" });
             }
 
 
@@ -227,13 +228,13 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "沒有groupId" });
             }
 
-            var data = db.GroupComments.Where(m => m.GroupId == groupId).Select(m => new { userId=m.MemberId, m.CommentContent, m.CommentDate }).ToList();
+            var data = db.GroupComments.Where(m => m.GroupId == groupId).Select(m => new { userId = m.MemberId, m.CommentContent, m.CommentDate }).ToList();
             if (data == null || !data.Any())
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "尚未有留言" });
             }
 
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true,  message = "讀取留言成功",data });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "讀取留言成功", data });
         }
         #endregion
         /// <summary>
@@ -303,8 +304,8 @@ namespace JoinJoy.Controllers
                 // 團隊不存在的回應
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
             }
-            
-            var leader = db.Groups.Where(m => m.GroupId == groupId).Select(m => new { memberId = m.MemberId, userName = m.Member.Nickname,status= EnumList.JoinGroupState.leader.ToString(), initNum=m.InitMember }).ToList();
+
+            var leader = db.Groups.Where(m => m.GroupId == groupId).Select(m => new { memberId = m.MemberId, userName = m.Member.Nickname, status = EnumList.JoinGroupState.leader.ToString(), initNum = m.InitMember }).ToList();
             var member = db.GroupParticipants
               .Where(gp => gp.GroupId == groupId)
               .Join(db.Members,
@@ -317,7 +318,7 @@ namespace JoinJoy.Controllers
 
 
 
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳揪團成員",  data  });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳揪團成員", data });
         }
         #endregion
         /// <summary>
@@ -395,7 +396,7 @@ namespace JoinJoy.Controllers
             var store = db.Stores.FirstOrDefault(s => s.Name == storeName);
             if (store == null)
             {
-                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到指定的店家"});
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到指定的店家" });
             }
 
             // 初始化營業時段及剩餘座位的列表
@@ -432,8 +433,8 @@ namespace JoinJoy.Controllers
             }
 
             // 返回店家指定日期的每個小時營業時段及其剩餘座位
-            
-            return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳",data= operatingHoursList });
+
+            return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳", data = operatingHoursList });
         }
         #endregion
         #region"預約遊戲"
@@ -466,7 +467,7 @@ namespace JoinJoy.Controllers
                                    .Where(g => g.GroupId == groupId)
                                    .Select(g => new
                                    {
-                                       storeId =g.StoreId,
+                                       storeId = g.StoreId,
                                        groupName = g.GroupName,
                                        startTime = g.StartTime,
                                        endTime = g.EndTime,
@@ -483,7 +484,16 @@ namespace JoinJoy.Controllers
                                        casual = g.Casual,
                                        competitive = g.Competitive,
                                        isPrivate = g.isPrivate,
-                                       games = g.GroupGames.Select(gg => gg.StoreInventory.GameDetails.Name).ToList(),
+                                       //games = g.GroupGames.Select(gg => gg.StoreInventory.GameDetails.Name).ToList(),
+                                       games = g.GroupGames
+         .Select(gg => new
+         {
+             gameId = gg.StoreInventory.GameDetails.Id,
+             gameName = gg.StoreInventory.GameDetails.Name,
+             gameType = gg.StoreInventory.GameDetails.GameType.TypeName // 假設遊戲類型也存儲在 GameDetails 中
+         })
+         .ToList(),
+
                                        createDate = g.CreationDate
                                    })
                                    .FirstOrDefault();
@@ -505,13 +515,22 @@ namespace JoinJoy.Controllers
         /// <returns></returns>
         #region "更新開團資訊"
         [HttpPost]
+        [JwtAuthFilter]
         [Route("update/{groupId}")]
-        public IHttpActionResult UpdateGroupDetails(int groupId, [FromBody] ViewGroup model)
+        public IHttpActionResult UpdateGroupDetails(int groupId, [FromBody] ViewEditGroup model)
         {
-            var group = db.Groups.Include("GroupGames").FirstOrDefault(g => g.GroupId == groupId);
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int currentUserId = (int)userToken["Id"];
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
+
             if (group == null)
             {
-                return NotFound();
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
+            }
+
+            if (group.MemberId != currentUserId)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有團主可以修改資訊" });
             }
 
             if (!ModelState.IsValid)
@@ -520,15 +539,15 @@ namespace JoinJoy.Controllers
             }
 
             // 更新團體的基本資訊
-            group.StoreId = model.storeId;
+            //group.StoreId = model.storeId;
             group.GroupName = model.groupName;
-            group.StartTime = model.startTime;
-            group.EndTime = model.endTime;
-            group.MaxParticipants = model.totalMemberNum;
+            //group.StartTime = model.startTime;
+            //group.EndTime = model.endTime;
+            //group.MaxParticipants = model.totalMemberNum;
             group.Description = model.description;
-            group.IsHomeGroup = model.isHomeGroup;
-            group.Address = model.place;
-            group.InitMember = model.initNum;
+            //group.IsHomeGroup = model.isHomeGroup;
+            //group.Address = model.place;
+            //group.InitMember = model.initNum;
             group.Beginner = model.beginnerTag;
             group.Expert = model.expertTag;
             group.Practice = model.practiceTag;
@@ -537,6 +556,7 @@ namespace JoinJoy.Controllers
             group.Casual = model.casualTag;
             group.Competitive = model.competitiveTag;
             group.isPrivate = model.isPrivate;
+            group.CreationDate = DateTime.Now;
 
             // 更新遊戲列表
             // 假設 model.GameIds 包含了所有更新後的遊戲ID
@@ -563,10 +583,137 @@ namespace JoinJoy.Controllers
 
             db.SaveChanges();
 
-            return Ok(new { message = "開團資訊已更新。" });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "開團資訊已更新" });
+
+        }
+        #endregion
+        #region"取得開團簡易資訊"
+        /// <summary>
+        /// 取得開團簡易資訊
+        /// </summary>
+        /// <param name="groupId">測試可用6和27</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("easydetail/{groupId}")]
+        public IHttpActionResult GetGroupEasyDetails(int groupId)
+        {
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
+
+            if (group == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
+            }
+            // 獲取該團隊所有成員的詳細信息
+            var membersDetails = db.GroupParticipants
+                            .Where(gp => gp.GroupId == groupId)
+                            .Join(db.Members, // 加入成員表
+                                  gp => gp.MemberId, // 團隊參與者的成員ID
+                                  mem => mem.Id, // 成員表的ID
+                                  (gp, mem) => new // 結合的結果
+                                  {
+                                      userId = gp.MemberId,
+                                      userName = mem.Nickname,
+                                      status = gp.AttendanceStatus,
+                                      initNum = gp.InitMember
+                                  })
+                            .ToList();
+
+            // 接著，我們獲取這個團隊的其他信息
+            var groupQuery = db.Groups
+                .Include(g => g.Store)
+                .Include(g => g.GroupGames.Select(gg => gg.StoreInventory.GameDetails))
+                .Where(g => g.GroupId == groupId)
+                .Select(g => new
+                {
+                    g.GroupName,
+                    g.GroupState,
+                    g.IsHomeGroup,
+                    g.Address,
+                    g.isPrivate,
+                    //g.Store.Price
+                    //Price = g.IsHomeGroup || g.Store == null ? (int?)null : g.Store.Price,
+                    Price = g.IsHomeGroup || g.Store == null ? (int?)null : g.Store.Price,
+                    StoreId = g.Store != null ? g.Store.Id : (int?)null,
+                    StoreName = g.Store != null ? g.Store.Name : null,
+                    StoreAddress = g.Store != null ? g.Store.Address : null,
+
+                    //StoreId = g.Store.Id,
+                    //StoreName = g.Store.Name,
+                    //StoreAddress = g.Store.Address,
+                    g.StartTime,
+                    g.EndTime,
+                    g.MaxParticipants,
+                    Games = g.GroupGames.Select(gg => new
+                    {
+                        GameId = gg.StoreInventory.Id,
+                        GameName = gg.StoreInventory.GameDetails.Name,
+                        GameType = gg.StoreInventory.GameDetails.GameType
+                    }).ToList(),
+                    g.Description,
+                    Tags = new // 假設 Tags 是一個匿名類型
+                    {
+                        Beginner = g.Beginner,
+                        Expert = g.Expert,
+                        Practice = g.Practice,
+                        Open = g.Open,
+                        Tutorial = g.Tutorial,
+                        Casual = g.Casual,
+                        Competitive = g.Competitive
+                    }
+                })
+                .FirstOrDefault();
+
+            if (groupQuery == null)
+            {
+                return NotFound();
+            }
+
+            // 處理 tags
+            var tags = new List<string>();
+            if (groupQuery.Tags.Beginner) tags.Add("新手團");
+            if (groupQuery.Tags.Expert) tags.Add("老手團");
+            if (groupQuery.Tags.Practice) tags.Add("經驗切磋");
+            if (groupQuery.Tags.Open) tags.Add("不限定");
+            if (groupQuery.Tags.Tutorial) tags.Add("教學團");
+            if (groupQuery.Tags.Casual) tags.Add("輕鬆");
+            if (groupQuery.Tags.Competitive) tags.Add("競技");
+
+            // 根據是否為家庭團隊來決定是否顯示商店和遊戲資訊
+            object storeInfo = groupQuery.IsHomeGroup ? null : new
+            {
+                storeId = groupQuery.StoreId,
+                storeName = groupQuery.StoreName,
+                address = groupQuery.StoreAddress
+            };
+
+            object gamesInfo = groupQuery.IsHomeGroup ? null : groupQuery.Games;
+
+            // 建立最終的物件
+            var groupWithGames = new
+            {
+                groupName = groupQuery.GroupName,
+                groupStatus = groupQuery.GroupState.ToString().ToLower(),
+                place = groupQuery.IsHomeGroup ? groupQuery.Address : null,
+                isPrivate = groupQuery.isPrivate,
+                store = storeInfo,
+                date = groupQuery.StartTime.ToString("yyyy/MM/dd"),
+                startTime = groupQuery.StartTime.ToString("HH:mm"),
+                endTime = groupQuery.EndTime.ToString("HH:mm"),
+                cost = groupQuery.Price.HasValue ? $"NT${groupQuery.Price.Value} 元 / 每人每小時" : null,
+                totalMemberNum = groupQuery.MaxParticipants,
+                games = gamesInfo,
+                description = groupQuery.Description,
+                members = membersDetails,
+                tags = tags // 使用處理後的標籤列表
+            };
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = false, message = "回傳成功", data = new { groupWithGames } });
+
         }
         #endregion
 
-
     }
+
+
+
 }
+
