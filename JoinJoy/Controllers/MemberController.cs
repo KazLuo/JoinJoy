@@ -362,7 +362,80 @@ namespace JoinJoy.Controllers
             return ResponseMessage(result);
         }
         #endregion
+        #region"所有喜好城市列表"
+        /// <summary>
+        /// 取得所有喜好城市列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("city")]
+        public IHttpActionResult GetCity()
+        {
+            try
+            {
+                var cityData = db.Cities
+                    .Select(c => new { c.Id, c.CityName })
+                    .ToList();
+
+                if (cityData == null || !cityData.Any()) // 檢查是否有城市資料
+                {
+                    // 如果沒有資料，返回客戶化的 HTTP 404 Not Found
+                    return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "未找到城市資料。", data = new { } });
+                }
+
+                // 如果有資料，返回正常的結果
+                return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = cityData });
+            }
+            catch (Exception ex)
+            {
+                // 如果有錯誤發生，記錄錯誤並返回客戶化的 HTTP 500 Internal Server Error
+                // Log the error (depending on your logging system)
+                // e.g. Logger.Error(ex);
+
+                // 返回錯誤資訊
+                return Content(HttpStatusCode.InternalServerError, new { statusCode = HttpStatusCode.InternalServerError, status = false, message = "伺服器錯誤。", data = new { }, exception = ex.Message });
+            }
+        }
+
+        #endregion
+        #region"所有喜好遊戲類別列表"
+        /// <summary>
+        /// 取得所有喜好遊戲類型列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("gameType")]
+        public IHttpActionResult GetGameType()
+        {
+            try
+            {
+                var gameType = db.GameTypes
+                    .Select(c => new { c.Id, c.TypeName })
+                    .ToList();
+
+                if (gameType == null || !gameType.Any()) // 檢查是否有城市資料
+                {
+                    // 如果沒有資料，返回客戶化的 HTTP 404 Not Found
+                    return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "未找到遊戲類型資料。", data = new { } });
+                }
+
+                // 如果有資料，返回正常的結果
+                return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = gameType });
+            }
+            catch (Exception ex)
+            {
+                // 如果有錯誤發生，記錄錯誤並返回客戶化的 HTTP 500 Internal Server Error
+                // Log the error (depending on your logging system)
+                // e.g. Logger.Error(ex);
+
+                // 返回錯誤資訊
+                return Content(HttpStatusCode.InternalServerError, new { statusCode = HttpStatusCode.InternalServerError, status = false, message = "伺服器錯誤。", data = new { }, exception = ex.Message });
+            }
+        }
+        #endregion
     }
+
+
 
 
 

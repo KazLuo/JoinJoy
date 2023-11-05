@@ -245,7 +245,7 @@ namespace JoinJoy.Controllers
                 if (user != null)
                 {
                     // 用戶已登入且 JWT 是有效的
-                    return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "用戶已登入。" });
+                    return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "用戶已登入。",data=new {userId=userId,nickName=user.Nickname } });
                 }
             }
 
