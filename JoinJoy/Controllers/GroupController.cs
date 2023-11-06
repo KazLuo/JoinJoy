@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Http;
 using System.Web.Http;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 
 namespace JoinJoy.Controllers
 {
@@ -24,61 +25,8 @@ namespace JoinJoy.Controllers
         /// <param name="model">主要用於填寫開團資料(不含遊戲預約店家預約現況)</param>
         /// <returns></returns>
         #region"CreateGroup"
-        //[HttpPost]
-        //[Route("create")]
-        //[JwtAuthFilter]
-        //public IHttpActionResult CreateGroup(ViewGroup viewGroup)
-        //{
-        //    var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
-
-        //    int id = (int)userToken["Id"];
-
-        //    var memberInfo = db.Members.FirstOrDefault(m => m.Id == id);
-
-        //    //檢查格式
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return BadRequest(ModelState);
-        //    }
-
-        //    // 檢查最大參與者人數
-        //    if (viewGroup.totalMemberNum > 12)
-        //    {
-        //        return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "開團人數上限為12人" });
-        //    }
-
-
-        //    Group newGroup = new Group
-        //    {
-        //        MemberId = memberInfo.Id,//用JWT生成會員資訊
-        //        GroupName = viewGroup.groupName,
-        //        StartTime = viewGroup.startTime,
-        //        EndTime = viewGroup.endTime,
-        //        MaxParticipants = viewGroup.totalMemberNum,
-        //        //CurrentParticipants = viewModel.CurrentParticipants, // Default is 1 as per ViewModel
-        //        Description = viewGroup.description,
-        //        IsHomeGroup = viewGroup.isHomeGroup,
-        //        Address = viewGroup.place,
-        //        InitMember = viewGroup.initNum,
-        //        CurrentParticipants = 1 + viewGroup.initNum,
-        //        Beginner = viewGroup.beginnerTag,
-        //        Expert = viewGroup.expertTag,
-        //        Practice = viewGroup.practiceTag,
-        //        Open = viewGroup.openTag,
-        //        Tutorial = viewGroup.tutorialTag,
-        //        Casual = viewGroup.casualTag,
-        //        Competitive = viewGroup.competitiveTag,
-        //        GroupState = EnumList.GroupState.開團中,
-        //        isPrivate = viewGroup.isPrivate
-
-        //    };
-
-        //    db.Groups.Add(newGroup);
-        //    db.SaveChanges();
-
-        //    return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "已成功開團!",data=new { groupId = newGroup.GroupId, groupState = newGroup.GroupState.ToString(),isPrivate=newGroup.isPrivate } });
-        //}
         [HttpPost]
+        [JwtAuthFilter]
         [Route("create")]
         public IHttpActionResult CreateGroupWithGames([FromBody] ViewGroup model)
         {
@@ -100,22 +48,47 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "開團人數上限為12人" });
             }
 
-            if (model.GameIds.Count > 5)
+            // 檢查結束時間是否在開始時間之後
+            if (model.endTime <= model.startTime)
             {
-                return BadRequest("您只能選擇最多五款遊戲。");
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "結束時間必須在開始時間之後。" });
+            }
+            if (!model.isHomeGroup)
+            {
+
+                if (model.GameIds.Count > 5)
+                {
+                    return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您只能選擇最多五款遊戲" });
+                }
+                var store = db.Stores.FirstOrDefault(s => s.Id == model.storeId);
+                if (store == null)
+                {
+                    // 如果 storeId 不存在，返回一個錯誤訊息
+                    return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = $"店家 ID {model.storeId} 不存在。" });
+                }
+
+                // 獲取當天的日期部分
+                DateTime dateOnly = model.startTime.Date;
+                //由於儲存店家的時間是使用TimeSpan而不是DateTime,因此要做轉換
+                // 將 TimeSpans 轉換為當天的 DateTime
+                DateTime openingDateTime = dateOnly + store.OpenTime;
+                DateTime closingDateTime = dateOnly + store.CloseTime;
+
+             
+
+                // 檢查開團時間是否在店家營業時間內
+                if (model.startTime < openingDateTime || model.endTime > closingDateTime)
+                {
+                    return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "開團時間必須在店家營業時間內。" });
+                }
             }
 
-            var store = db.Stores.FirstOrDefault(s => s.Id == model.storeId);
-            if (store == null)
-            {
-                // 如果 storeId 不存在，返回一個錯誤訊息
-                return BadRequest($"店家 ID {model.storeId} 不存在。");
-            }
 
             var group = new Group
             {
                 MemberId = id,
-                StoreId = model.storeId,
+                //StoreId = model.storeId,
+                StoreId = model.isHomeGroup ? (int?)null : model.storeId, // 如果是 HomeGroup，則 StoreId 可為 null
                 GroupName = model.groupName,
                 StartTime = model.startTime,
                 EndTime = model.endTime,
@@ -139,28 +112,30 @@ namespace JoinJoy.Controllers
 
             db.Groups.Add(group);
             db.SaveChanges(); // 儲存團體以獲取 GroupId
-            foreach (var gameId in model.GameIds)
+            if (!model.isHomeGroup)
             {
-                // 在這裡檢查每個 gameId 是否存在於 StoreInventories 表中
-                var storeInventory = db.StoreInventories.FirstOrDefault(si => si.Id == gameId);
-                if (storeInventory == null)
+                foreach (var gameId in model.GameIds)
                 {
-                    // 如果 gameId 不存在，返回一個錯誤訊息
-                    return BadRequest($"遊戲 ID {gameId} 不存在於店家庫存中。");
-                }
+                    // 在這裡檢查每個 gameId 是否存在於 StoreInventories 表中
+                    var storeInventory = db.StoreInventories.FirstOrDefault(si => si.Id == gameId);
+                    if (storeInventory == null)
+                    {
+                        // 如果 gameId 不存在，返回一個錯誤訊息
+                        return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = $"遊戲 ID {gameId} 不存在於店家庫存中。" });
+                    }
 
-                var groupGame = new GroupGame
-                {
-                    GroupId = group.GroupId,
-                    StoreInventoryId = gameId,
-                    InitDate = DateTime.Now
-                };
-                db.GroupGames.Add(groupGame);
+                    var groupGame = new GroupGame
+                    {
+                        GroupId = group.GroupId,
+                        StoreInventoryId = gameId,
+                        InitDate = DateTime.Now
+                    };
+                    db.GroupGames.Add(groupGame);
+                }
             }
 
             db.SaveChanges(); // 儲存團體遊戲
-
-            return Ok(new { groupId = group.GroupId, message = "團體和遊戲成功添加。" });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "團體和遊戲成功添加。", groupId = group.GroupId });
         }
         #endregion
         /// <summary>
@@ -265,7 +240,7 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該團已送出預約，下次請早!" });
             }
-            if (group.CurrentParticipants + viewJoinGroup.initNum > group.MaxParticipants)
+            if (group.CurrentParticipants + viewJoinGroup.initNum+1 > group.MaxParticipants)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "已經滿團囉!" });
             }
@@ -428,7 +403,7 @@ namespace JoinJoy.Controllers
                 operatingHoursList.Add(new
                 {
                     time = $"{hour.ToString("HH:mm")}~{nextHour.ToString("HH:mm")}",
-                    seat = remainingSeats
+                    seat = $"可容納人數: {remainingSeats}"
                 });
             }
 
@@ -463,7 +438,7 @@ namespace JoinJoy.Controllers
         public IHttpActionResult GetGroupDetails(int groupId)
         {
             var groupWithGames = db.Groups
-                                   .Include("GroupGames.StoreInventory.Game")  // 假設你使用的是 EF6
+                                   .Include("GroupGames.StoreInventory.Game")  //  EF6
                                    .Where(g => g.GroupId == groupId)
                                    .Select(g => new
                                    {
@@ -486,14 +461,12 @@ namespace JoinJoy.Controllers
                                        isPrivate = g.isPrivate,
                                        //games = g.GroupGames.Select(gg => gg.StoreInventory.GameDetails.Name).ToList(),
                                        games = g.GroupGames
-         .Select(gg => new
-         {
-             gameId = gg.StoreInventory.GameDetails.Id,
-             gameName = gg.StoreInventory.GameDetails.Name,
-             gameType = gg.StoreInventory.GameDetails.GameType.TypeName // 假設遊戲類型也存儲在 GameDetails 中
-         })
-         .ToList(),
-
+                                       .Select(gg => new
+                                       {
+                                           gameId = gg.StoreInventory.Id,
+                                           gameName = gg.StoreInventory.GameDetails.Name,
+                                           gameType = gg.StoreInventory.GameDetails.GameType.TypeName // 假設遊戲類型也存儲在 GameDetails 中
+                                       }).ToList(),
                                        createDate = g.CreationDate
                                    })
                                    .FirstOrDefault();
@@ -508,20 +481,26 @@ namespace JoinJoy.Controllers
 
         #endregion
         /// <summary>
-        /// 更新開團資訊
+        /// 編輯開團資訊
         /// </summary>
         /// <param name="groupId">團體ID</param>
-        /// <param name="model">更新的團體資訊</param>
+        /// <param name="model">編輯的團體資訊</param>
         /// <returns></returns>
-        #region "更新開團資訊"
+        #region "編輯開團資訊"
         [HttpPost]
         [JwtAuthFilter]
-        [Route("update/{groupId}")]
+        [Route("edit/{groupId}")]
         public IHttpActionResult UpdateGroupDetails(int groupId, [FromBody] ViewEditGroup model)
         {
             var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
             int currentUserId = (int)userToken["Id"];
             var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
+
+            // 在更新之前檢查團隊狀態
+            if (group.GroupState == EnumList.GroupState.已預約) // 假設 GroupState 是一個枚舉類型，包含不同的團隊狀態
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊已預約，無法更新資訊" });
+            }
 
             if (group == null)
             {
@@ -539,15 +518,8 @@ namespace JoinJoy.Controllers
             }
 
             // 更新團體的基本資訊
-            //group.StoreId = model.storeId;
             group.GroupName = model.groupName;
-            //group.StartTime = model.startTime;
-            //group.EndTime = model.endTime;
-            //group.MaxParticipants = model.totalMemberNum;
             group.Description = model.description;
-            //group.IsHomeGroup = model.isHomeGroup;
-            //group.Address = model.place;
-            //group.InitMember = model.initNum;
             group.Beginner = model.beginnerTag;
             group.Expert = model.expertTag;
             group.Practice = model.practiceTag;
@@ -559,34 +531,43 @@ namespace JoinJoy.Controllers
             group.CreationDate = DateTime.Now;
 
             // 更新遊戲列表
-            // 假設 model.GameIds 包含了所有更新後的遊戲ID
-            var existingGameIds = group.GroupGames.Select(gg => gg.StoreInventoryId).ToList();
-            var newGameIds = model.GameIds.Except(existingGameIds).ToList();
-            var removedGameIds = existingGameIds.Except(model.GameIds).ToList();
+            var existingGames = group.GroupGames.ToList();
 
-            // 移除不再選擇的遊戲
-            foreach (var gameId in removedGameIds)
+            // 移除與該團體ID關聯的所有遊戲
+            var gamesToRemove = db.GroupGames.Where(gg => gg.GroupId == groupId).ToList();
+            foreach (var game in gamesToRemove)
             {
-                var gameToRemove = group.GroupGames.FirstOrDefault(gg => gg.StoreInventoryId == gameId);
-                if (gameToRemove != null)
-                {
-                    db.GroupGames.Remove(gameToRemove);
-                }
+                db.GroupGames.Remove(game);
             }
 
+            db.SaveChanges(); // 確保移除操作立即生效
+
             // 加入新選擇的遊戲
-            foreach (var gameId in newGameIds)
+            foreach (var gameId in model.GameIds)
             {
-                var gameToAdd = new GroupGame { GroupId = groupId, StoreInventoryId = gameId };
+                var gameToAdd = new GroupGame { GroupId = groupId, StoreInventoryId = gameId, InitDate = DateTime.Now };
                 db.GroupGames.Add(gameToAdd);
             }
 
-            db.SaveChanges();
+            // 儲存所有更改
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateException ex)
+            {
+                // 處理異常情況，例如列印日誌或返回特定的錯誤信息
+                return Content(HttpStatusCode.InternalServerError, new { statusCode = HttpStatusCode.InternalServerError, status = false, message = "無法更新開團資訊，請聯繫系統管理員。" });
+            }
 
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "開團資訊已更新" });
 
+
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "開團資訊已更新" });
         }
         #endregion
+
+
         #region"取得開團簡易資訊"
         /// <summary>
         /// 取得開團簡易資訊
@@ -613,7 +594,7 @@ namespace JoinJoy.Controllers
                                   {
                                       userId = gp.MemberId,
                                       userName = mem.Nickname,
-                                      status = gp.AttendanceStatus,
+                                      status = gp.AttendanceStatus.ToString(),
                                       initNum = gp.InitMember
                                   })
                             .ToList();
@@ -710,8 +691,150 @@ namespace JoinJoy.Controllers
 
         }
         #endregion
+        /// <summary>
+        /// 團員退出團隊
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <returns></returns>
+        #region"團員退出團隊"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("leavegroup/{groupId}")]
+        public IHttpActionResult LeaveGroup(int groupId)
+        {
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int memberId = (int)userToken["Id"];
+            // 檢查團隊是否存在
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
+            if (group == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到該團" });
+                
+            }
+
+            // 確保用戶是團隊的成員
+            var member = db.GroupParticipants.FirstOrDefault(gp => gp.GroupId == groupId && gp.MemberId == memberId);
+            if (member == null)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "用戶不是此團隊的成員。" });
+            }
+
+            // 檢查團隊狀態，只有在開團中時才能退出
+            if (group.GroupState != EnumList.GroupState.開團中)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "無法退出，因為團隊目前不是開團中狀態。如果是團主請使用解散團隊" });
+            }
+
+            // 從團隊中移除成員
+            db.GroupParticipants.Remove(member);
+            db.SaveChanges();
+
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "成功退出團隊。" });
+        }
+
+        #endregion
+        /// <summary>
+        /// 更改開團狀態(開團中/預約中)
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <returns></returns>
+        #region"更改開團狀態(開團中/預約中)"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("reservegroup/{groupId}")]
+        public IHttpActionResult ReserveGroup(int groupId)
+        {
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int currentUserId = (int)userToken["Id"];// 獲取當前登錄用戶的ID
+            // 檢查該團隊是否存在
+            var group = db.Groups.Include(g => g.GroupParticipants).FirstOrDefault(g => g.GroupId == groupId);
+            if (group == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到該團" });
+            }
+
+            // 檢查是否為團主的請求
+            if (group.MemberId != currentUserId)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有團主才能預約。" });
+            }
+
+            // 確認所有成員都已經審核通過
+            if (group.GroupParticipants.Any(gp => gp.AttendanceStatus != EnumList.JoinGroupState.member))
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "無法預約，因為並非所有成員都已審核通過。" });
+            }
+
+            // 確認團隊目前的狀態允許預約
+            if (group.GroupState != EnumList.GroupState.開團中)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊狀態不允許進行預約。" });
+            }
+
+            // 更新團隊狀態為已預約
+            group.GroupState = EnumList.GroupState.已預約;
+
+            // 更新店家當前人數
+            var store = db.Stores.FirstOrDefault(s => s.Id == group.StoreId);
+            if (store != null)
+            {
+                store.CurPeople += group.GroupParticipants.Count();
+            }
+
+            // 儲存所有更改
+            db.SaveChanges();
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "預約成功，團隊狀態已更新，店家人數已更新。" });
+        }
+        #endregion
+        /// <summary>
+        /// 團主解散揪團
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <returns></returns>
+        #region"團主解散揪團"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("disbandgroup/{groupId}")]
+        public IHttpActionResult DisbandGroup(int groupId)
+        {
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int currentUserId = (int)userToken["Id"];// 獲取當前登錄用戶的ID
+            // 查找團隊
+            var group = db.Groups.Include(g => g.GroupParticipants).FirstOrDefault(g => g.GroupId == groupId);
+            if (group == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到該團" });
+            }
+
+            // 驗證請求者是否為團主
+            if (group.MemberId != currentUserId)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有團主可以解散團隊。" });
+            }
+
+            // 確認團隊狀態是否為開團中
+            if (group.GroupState != EnumList.GroupState.開團中)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有在開團中的狀態才可以解散團隊" });
+            }
+
+            // 刪除所有參加人員的參加紀錄
+            db.GroupParticipants.RemoveRange(group.GroupParticipants);
+
+            // 刪除團隊的開團紀錄
+            db.Groups.Remove(group);
+
+            // 儲存更改到數據庫
+            db.SaveChanges();
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = false, message = "團隊已成功解散。" });
+        }
+
+        #endregion
 
     }
+
+
+
 
 
 

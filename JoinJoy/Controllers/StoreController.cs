@@ -58,7 +58,7 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到店家" });
             }
-            var gamelist = db.StoreInventories.Where(m => m.StoreId == storeId).Select(m => new { gametype = m.GameDetails.GameType.TypeName, gameName = m.GameDetails.Name, version = m.GameDetails.Language, peopleNum = m.GameDetails.People, qtu = m.StockCount });
+            var gamelist = db.StoreInventories.Where(m => m.StoreId == storeId).Select(m => new {gameId=m.Id, gametype = m.GameDetails.GameType.TypeName, gameName = m.GameDetails.Name, version = m.GameDetails.Language, peopleNum = m.GameDetails.People, qtu = m.StockCount });
             // 找不到遊戲清單
             if (!gamelist.Any())
             {
