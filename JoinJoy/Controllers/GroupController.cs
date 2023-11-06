@@ -563,7 +563,7 @@ namespace JoinJoy.Controllers
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "開團資訊已更新" });
 
 
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "開團資訊已更新" });
+            
         }
         #endregion
 
