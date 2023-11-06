@@ -412,21 +412,6 @@ namespace JoinJoy.Controllers
             return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "成功回傳", data = operatingHoursList });
         }
         #endregion
-        #region"預約遊戲"
-        //[HttpPost]
-        //[JwtAuthFilter]
-        //[Route("bookgame/{groupId}")]
-        //public IHttpActionResult BookGame(int? groupId)
-        //{
-        //    var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
-        //    int currentUserId = (int)userToken["Id"];
-        //    var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
-        //    if (group.MemberId != currentUserId)
-        //    {
-        //        return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有團長可以預約遊戲" });
-        //    }
-        //}
-        #endregion
         /// <summary>
         /// 取得開團詳細資訊
         /// </summary>
@@ -566,14 +551,12 @@ namespace JoinJoy.Controllers
             
         }
         #endregion
-
-
-        #region"取得開團簡易資訊"
         /// <summary>
         /// 取得開團簡易資訊
         /// </summary>
         /// <param name="groupId">測試可用6和27</param>
         /// <returns></returns>
+        #region"取得開團簡易資訊"
         [HttpGet]
         [Route("easydetail/{groupId}")]
         public IHttpActionResult GetGroupEasyDetails(int groupId)
@@ -826,7 +809,7 @@ namespace JoinJoy.Controllers
 
             // 儲存更改到數據庫
             db.SaveChanges();
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = false, message = "團隊已成功解散。" });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "團隊已成功解散。" });
         }
 
         #endregion
