@@ -7,13 +7,13 @@ namespace JoinJoy.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.2.0-61023")]
-    public sealed partial class fixsotre : IMigrationMetadata
+    public sealed partial class _111 : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(fixsotre));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(_111));
         
         string IMigrationMetadata.Id
         {
-            get { return "202311020754096_fix sotre"; }
+            get { return "202311071020419_111"; }
         }
         
         string IMigrationMetadata.Source

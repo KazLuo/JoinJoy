@@ -311,12 +311,12 @@ namespace JoinJoy.Controllers
                 {
                     statusCode = HttpStatusCode.OK,
                     status = true,
-                    message = "檔案上傳成功。", 
+                    message = "檔案上傳成功。",
                     data = new
                     {
                         FileName = fileName
                     },
-                    
+
                 });
             }
             catch (Exception e)
@@ -439,6 +439,7 @@ namespace JoinJoy.Controllers
         /// <returns></returns>
         #region"取得會員所有揪團紀錄"
         [HttpGet]
+        [JwtAuthFilter]
         [Route("usergrouplist")]
         public IHttpActionResult GetUserGroupList()
         {
@@ -450,15 +451,116 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
             }
-            var info = db.GroupParticipants.Where(gp => gp.MemberId == userId).Select(gp => new { groupId= gp.GroupId, groupName = gp.Group.GroupName,startTime = gp.Group.StartTime, endTime=gp.Group.EndTime, totalMemberNum= gp.Group.MaxParticipants, currentPeople=gp.Group.CurrentParticipants, place = string.IsNullOrEmpty(gp.Group.Address) ? (string)null : gp.Group.Address, store=new{ storeId=gp.Group.StoreId,storeName=gp.Group.Store.Name,address=gp.Group.Store.Address },status=gp.AttendanceStatus.ToString() }).ToList();
+            var info = db.GroupParticipants.Where(gp => gp.MemberId == userId).Select(gp => new { groupId = gp.GroupId, groupName = gp.Group.GroupName, startTime = gp.Group.StartTime, endTime = gp.Group.EndTime, totalMemberNum = gp.Group.MaxParticipants, currentPeople = gp.Group.CurrentParticipants, place = string.IsNullOrEmpty(gp.Group.Address) ? (string)null : gp.Group.Address, store = new { storeId = gp.Group.StoreId, storeName = gp.Group.Store.Name, address = gp.Group.Store.Address }, status = gp.AttendanceStatus.ToString() }).ToList();
+
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { info } });
         }
         #endregion
+        /// <summary>
+        /// 會員評價
+        /// </summary>
+        /// <param name="viewRatingMember"></param>
+        /// <returns></returns>
+        #region"評價會員"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("ratingmember")]
+        public IHttpActionResult RatingMember(ViewRatingMember viewRatingMember)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int userId = (int)userToken["Id"];
+
+            var memberToRate = db.Members.FirstOrDefault(m => m.Id == viewRatingMember.memberId);
+            if (memberToRate == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "被評價的會員不存在" });
+            }
+
+            // 確保用戶不是在評價自己
+            if (userId == viewRatingMember.memberId)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您不能評價自己" });
+            }
+
+            // 檢查用戶是否已經給這個會員評過分
+            var existingRating = db.MemberRatings.FirstOrDefault(r => r.RatedId == viewRatingMember.memberId && r.MemberId == userId);
+            if (existingRating != null)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您已經給該會員評過分" });
+            }
+
+            // 創建一個新的評價記錄
+            var rating = new MemberRating
+            {
+                GroupId = viewRatingMember.groupId,
+                MemberId = userId,
+                RatedId = viewRatingMember.memberId,
+                Score = viewRatingMember.score,
+                Comment = viewRatingMember.comment,
+                RatingDate = DateTime.Now
+            };
+
+            // 將評價記錄加入資料庫
+            db.MemberRatings.Add(rating);
+
+            // 儲存變更
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                // 處理錯誤，例如記錄錯誤或返回一個錯誤信息
+                return InternalServerError(ex);
+            }
+
+
+            // 返回成功信息
+            return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "評價成功" });
+        }
+        #endregion
+        /// <summary>
+        /// 確認團員評價狀態
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("check-group-ratings/{groupId}")]
+        public IHttpActionResult CheckGroupRatings(int groupId)
+        {
+            // 獲取團隊成員
+            var groupMembers = db.GroupParticipants.Where(gp => gp.GroupId == groupId).Select(gp => gp.MemberId).ToList();
+
+            // 檢查每位成員是否被評價
+            var memberRatingsStatus = groupMembers.Select(memberId =>
+                new {
+                    MemberId = memberId,
+                    IsRated = db.MemberRatings.Any(mr => mr.RatedId == memberId && mr.GroupId == groupId)
+                }).ToList();
+
+            // 檢查是否所有成員都已被評價
+            var isAllRated = memberRatingsStatus.All(mrs => mrs.IsRated);
+
+            return Ok(new
+            {
+                IsAllMembersRated = isAllRated,
+                MembersRatingStatus = memberRatingsStatus
+            });
+        }
+
+
+
     }
-
-
-
-
-
-
 }
+
+
+
+
+
+
+

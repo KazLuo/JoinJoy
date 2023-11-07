@@ -48,6 +48,12 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "開團人數上限為12人" });
             }
 
+            // 檢查開團者與攜帶人數是否超過totalMemberNum
+            if (1+model.initNum > model.totalMemberNum)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團主及同行親友不可超過上限人數" });
+            }
+
             // 檢查結束時間是否在開始時間之後
             if (model.endTime <= model.startTime)
             {
@@ -760,15 +766,44 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊狀態不允許進行預約。" });
             }
 
-            // 更新團隊狀態為已預約
-            group.GroupState = EnumList.GroupState.已預約;
-
-            // 更新店家當前人數
+            // 在此處進行預約前的座位檢查
+            var startTime = group.StartTime;
+            var endTime = group.EndTime;
             var store = db.Stores.FirstOrDefault(s => s.Id == group.StoreId);
             if (store != null)
             {
-                store.CurPeople += group.GroupParticipants.Count();
+                // 查詢該時段內所有的團體預約
+                var reservations = db.Groups.Where(g => g.StoreId == store.Id
+                                                        && g.StartTime < endTime
+                                                        && g.EndTime > startTime
+                                                        && g.GroupState == EnumList.GroupState.已預約)
+                                            .ToList();
+
+                // 計算該時段內已預約的總人數
+                var reservedSeats = reservations.Sum(g => g.CurrentParticipants);
+
+                // 計算剩餘座位數
+                var remainingSeats = store.MaxPeople - reservedSeats;
+
+                // 如果沒有足夠的剩餘座位
+                if (remainingSeats < group.CurrentParticipants)
+                {
+                    return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該時段內沒有足夠的剩餘座位。" });
+                }
             }
+
+
+
+
+            // 更新團隊狀態為已預約
+            group.GroupState = EnumList.GroupState.已預約;
+
+            //// 更新店家當前人數
+            //var store = db.Stores.FirstOrDefault(s => s.Id == group.StoreId);
+            //if (store != null)
+            //{
+            //    store.CurPeople += group.GroupParticipants.Count();
+            //}
 
             // 儲存所有更改
             db.SaveChanges();

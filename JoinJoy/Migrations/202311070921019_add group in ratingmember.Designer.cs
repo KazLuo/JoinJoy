@@ -7,13 +7,13 @@ namespace JoinJoy.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.2.0-61023")]
-    public sealed partial class addinitmember : IMigrationMetadata
+    public sealed partial class addgroupinratingmember : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(addinitmember));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(addgroupinratingmember));
         
         string IMigrationMetadata.Id
         {
-            get { return "202311010405426_add initmember"; }
+            get { return "202311070921019_add group in ratingmember"; }
         }
         
         string IMigrationMetadata.Source

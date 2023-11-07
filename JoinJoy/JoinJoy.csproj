@@ -248,45 +248,13 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202310270958171_2.cs" />
-    <Compile Include="Migrations\202310270958171_2.Designer.cs">
-      <DependentUpon>202310270958171_2.cs</DependentUpon>
+    <Compile Include="Migrations\202311070921019_add group in ratingmember.cs" />
+    <Compile Include="Migrations\202311070921019_add group in ratingmember.Designer.cs">
+      <DependentUpon>202311070921019_add group in ratingmember.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202310271715020_fix group maxlength.cs" />
-    <Compile Include="Migrations\202310271715020_fix group maxlength.Designer.cs">
-      <DependentUpon>202310271715020_fix group maxlength.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202310290758598_fix some MaxLength.cs" />
-    <Compile Include="Migrations\202310290758598_fix some MaxLength.Designer.cs">
-      <DependentUpon>202310290758598_fix some MaxLength.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202310300644061_fix group_Status.cs" />
-    <Compile Include="Migrations\202310300644061_fix group_Status.Designer.cs">
-      <DependentUpon>202310300644061_fix group_Status.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202310310714124_fix stor db DatetimetoTimesapn.cs" />
-    <Compile Include="Migrations\202310310714124_fix stor db DatetimetoTimesapn.Designer.cs">
-      <DependentUpon>202310310714124_fix stor db DatetimetoTimesapn.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202310310747420_add phone.cs" />
-    <Compile Include="Migrations\202310310747420_add phone.Designer.cs">
-      <DependentUpon>202310310747420_add phone.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202311010405426_add initmember.cs" />
-    <Compile Include="Migrations\202311010405426_add initmember.Designer.cs">
-      <DependentUpon>202311010405426_add initmember.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202311011501226_add isprivate.cs" />
-    <Compile Include="Migrations\202311011501226_add isprivate.Designer.cs">
-      <DependentUpon>202311011501226_add isprivate.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202311020754096_fix sotre.cs" />
-    <Compile Include="Migrations\202311020754096_fix sotre.Designer.cs">
-      <DependentUpon>202311020754096_fix sotre.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202311030656419_1.cs" />
-    <Compile Include="Migrations\202311030656419_1.Designer.cs">
-      <DependentUpon>202311030656419_1.cs</DependentUpon>
+    <Compile Include="Migrations\202311071020419_111.cs" />
+    <Compile Include="Migrations\202311071020419_111.Designer.cs">
+      <DependentUpon>202311071020419_111.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
@@ -314,6 +282,7 @@
     <Compile Include="Models\ViewModels\ViewJoinGroup.cs" />
     <Compile Include="Models\ViewModels\Viewlogin.cs" />
     <Compile Include="Models\ViewModels\ViewPasswordChange.cs" />
+    <Compile Include="Models\ViewModels\ViewRatingMember.cs" />
     <Compile Include="Models\ViewModels\ViewRegister.cs" />
     <Compile Include="Models\ViewModels\ViewReviewGroup.cs" />
     <Compile Include="Models\ViewModels\ViewUdtMemberDetail.cs" />
@@ -410,35 +379,11 @@
     <Content Include="Scripts\jquery-3.4.1.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202310270958171_2.resx">
-      <DependentUpon>202310270958171_2.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202311070921019_add group in ratingmember.resx">
+      <DependentUpon>202311070921019_add group in ratingmember.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310271715020_fix group maxlength.resx">
-      <DependentUpon>202310271715020_fix group maxlength.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310290758598_fix some MaxLength.resx">
-      <DependentUpon>202310290758598_fix some MaxLength.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310300644061_fix group_Status.resx">
-      <DependentUpon>202310300644061_fix group_Status.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310310714124_fix stor db DatetimetoTimesapn.resx">
-      <DependentUpon>202310310714124_fix stor db DatetimetoTimesapn.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202310310747420_add phone.resx">
-      <DependentUpon>202310310747420_add phone.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202311010405426_add initmember.resx">
-      <DependentUpon>202311010405426_add initmember.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202311011501226_add isprivate.resx">
-      <DependentUpon>202311011501226_add isprivate.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202311020754096_fix sotre.resx">
-      <DependentUpon>202311020754096_fix sotre.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202311030656419_1.resx">
-      <DependentUpon>202311030656419_1.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202311071020419_111.resx">
+      <DependentUpon>202311071020419_111.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
