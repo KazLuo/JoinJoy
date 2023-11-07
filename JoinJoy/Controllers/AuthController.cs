@@ -244,8 +244,13 @@ namespace JoinJoy.Controllers
                 var user = db.Members.FirstOrDefault(m => m.Id == userId);
                 if (user != null)
                 {
+                    string photopath = "";
+                    if (user.Photo!= null)
+                    {
+                        photopath = $"~/upload/profile/{user.Photo}";
+                    }
                     // 用戶已登入且 JWT 是有效的
-                    return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "用戶已登入。",data=new {userId=userId,nickName=user.Nickname } });
+                    return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "用戶已登入。",data=new {userId=userId,nickName=user.Nickname,photo= photopath } });
                 }
             }
 

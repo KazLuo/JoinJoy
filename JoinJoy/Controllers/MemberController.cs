@@ -433,7 +433,29 @@ namespace JoinJoy.Controllers
             }
         }
         #endregion
+        /// <summary>
+        /// 取得會員所有揪團紀錄
+        /// </summary>
+        /// <returns></returns>
+        #region"取得會員所有揪團紀錄"
+        [HttpGet]
+        [Route("usergrouplist")]
+        public IHttpActionResult GetUserGroupList()
+        {
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int userId = (int)userToken["Id"];
+
+            var user = db.Members.FirstOrDefault(m => m.Id == userId);
+            if (user == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
+            }
+            var info = db.GroupParticipants.Where(gp => gp.MemberId == userId).Select(gp => new { groupId= gp.GroupId, groupName = gp.Group.GroupName,startTime = gp.Group.StartTime, endTime=gp.Group.EndTime, totalMemberNum= gp.Group.MaxParticipants, currentPeople=gp.Group.CurrentParticipants, place = string.IsNullOrEmpty(gp.Group.Address) ? (string)null : gp.Group.Address, store=new{ storeId=gp.Group.StoreId,storeName=gp.Group.Store.Name,address=gp.Group.Store.Address },status=gp.AttendanceStatus.ToString() }).ToList();
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { info } });
+        }
+        #endregion
     }
+
 
 
 

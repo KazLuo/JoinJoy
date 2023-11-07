@@ -422,6 +422,12 @@ namespace JoinJoy.Controllers
         [Route("detail/{groupId}")]
         public IHttpActionResult GetGroupDetails(int groupId)
         {
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
+
+            if (group == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
+            }
             var groupWithGames = db.Groups
                                    .Include("GroupGames.StoreInventory.Game")  //  EF6
                                    .Where(g => g.GroupId == groupId)
@@ -431,7 +437,7 @@ namespace JoinJoy.Controllers
                                        groupName = g.GroupName,
                                        startTime = g.StartTime,
                                        endTime = g.EndTime,
-                                       maxParticipants = g.MaxParticipants,
+                                       totalMemberNum = g.MaxParticipants,
                                        description = g.Description,
                                        isHomeGroup = g.IsHomeGroup,
                                        address = g.Address,
