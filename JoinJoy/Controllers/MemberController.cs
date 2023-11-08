@@ -474,11 +474,17 @@ namespace JoinJoy.Controllers
 
             var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
             int userId = (int)userToken["Id"];
-
+            //驗證會員
             var memberToRate = db.Members.FirstOrDefault(m => m.Id == viewRatingMember.memberId);
             if (memberToRate == null)
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "被評價的會員不存在" });
+            }
+            //驗證會員有參加此團
+            var isjoin = db.GroupParticipants.Any(m => m.GroupId == viewRatingMember.groupId && m.MemberId == viewRatingMember.memberId);
+            if (!isjoin)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "只有參加此團的人員能夠評價" });
             }
 
             // 確保用戶不是在評價自己
@@ -530,35 +536,100 @@ namespace JoinJoy.Controllers
         /// <param name="groupId"></param>
         /// <returns></returns>
         #region"確認團員評價狀態"
+        //[HttpGet]
+        //[JwtAuthFilter]
+        //[Route("check-group-ratings/{groupId}")]
+        //public IHttpActionResult CheckGroupRatings(int groupId)
+        //{
+
+        //    var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+        //    int userId = (int)userToken["Id"];
+
+        //    // 獲取團隊成員
+        //    var groupMembers = db.GroupParticipants.Where(gp => gp.GroupId == groupId).Select(gp => gp.MemberId).ToList();
+
+        //    // 檢查每位成員是否被評價
+        //    var memberRatingsStatus = groupMembers.Select(memberId =>
+        //        new
+        //        {
+        //            MemberId = memberId,
+        //            IsRated = db.MemberRatings.Any(mr => mr.RatedId == memberId && mr.GroupId == groupId && mr.MemberId == userId)
+        //        }).ToList();
+
+        //    // 檢查是否所有成員都已被評價
+        //    var isAllRated = memberRatingsStatus.All(mrs => mrs.IsRated);
+
+        //    return Ok(new
+        //    {
+        //        IsAllMembersRated = isAllRated,
+        //        MembersRatingStatus = memberRatingsStatus
+        //    });
+        //}
+        #region"確認團員評價狀態"
         [HttpGet]
         [JwtAuthFilter]
         [Route("check-group-ratings/{groupId}")]
         public IHttpActionResult CheckGroupRatings(int groupId)
         {
-
             var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
             int userId = (int)userToken["Id"];
+            //驗證開團是否處於開團狀態
+            var groupstatus = db.Groups.Any(g => g.GroupId == groupId && g.GroupState == EnumList.GroupState.開團中);
+            if (groupstatus)
+            {
+                return Ok(new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊還在開團狀態，尚無團隊評價資訊" });
+            }
+         
 
-            // 獲取團隊成員
-            var groupMembers = db.GroupParticipants.Where(gp => gp.GroupId == groupId).Select(gp => gp.MemberId).ToList();
+            // 獲取團隊成員，但排除登入者本人
+            var groupMembers = db.GroupParticipants
+                                 .Where(gp => gp.GroupId == groupId && gp.MemberId != userId)
+                                 .Select(gp => gp.MemberId)
+                                 .ToList();
 
-            // 檢查每位成員是否被評價
+            // 添加團主的MemberId，如果團主不在GroupParticipants中且團主不是登入者
+            var groupLeaderId = db.Groups.Where(g => g.GroupId == groupId).Select(g => g.MemberId).FirstOrDefault();
+            if (groupLeaderId != userId && !groupMembers.Contains(groupLeaderId))
+            {
+                groupMembers.Add(groupLeaderId);
+            }
+
+            //驗證會員有參加此團
+            var isjoin = db.GroupParticipants.Any(m => m.GroupId == groupId && m.MemberId == userId);
+            if (!isjoin)
+            {
+                if(groupLeaderId != userId)
+                {
+                    return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有參加此團的人能驗證評價狀態" });
+                }
+                
+            }
+
+            // 檢查每位成員是否被評價，包括團主
             var memberRatingsStatus = groupMembers.Select(memberId =>
                 new
                 {
-                    MemberId = memberId,
-                    IsRated = db.MemberRatings.Any(mr => mr.RatedId == memberId && mr.GroupId == groupId && mr.MemberId == userId)
+                    memberId = memberId,
+                    isRated = db.MemberRatings.Any(mr => mr.RatedId == memberId && mr.GroupId == groupId),
+                    score = db.MemberRatings.Where(mr => mr.RatedId == memberId && mr.GroupId == groupId).Select(mr=>mr.Score).FirstOrDefault(),
+                    comment = db.MemberRatings.Where(mr => mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Comment).FirstOrDefault(),
                 }).ToList();
 
-            // 檢查是否所有成員都已被評價
-            var isAllRated = memberRatingsStatus.All(mrs => mrs.IsRated);
+            // 檢查是否所有成員都已被評價（包括團主）
+            var isAllRated = memberRatingsStatus.All(mrs => mrs.isRated);
 
-            return Ok(new
-            {
-                IsAllMembersRated = isAllRated,
-                MembersRatingStatus = memberRatingsStatus
+            return Content(HttpStatusCode.OK,new { statusCode = HttpStatusCode.OK, status = true, message = "評價成功",
+                data=new
+                {
+                    isAllRated = isAllRated,
+                    ratingStatus = memberRatingsStatus
+
+                }
             });
         }
+        #endregion
+
+
         #endregion
 
 
