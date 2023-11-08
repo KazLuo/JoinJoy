@@ -49,18 +49,25 @@ namespace JoinJoy.Models
         public string Address { get; set; }
 
         /// <summary>
+        /// 電話
+        /// </summary>
+        [Required(ErrorMessage = "{0}必填")]
+        [Display(Name = "店家電話")]
+        public string Phone { get; set; }
+
+        /// <summary>
         /// 營業開始時間
         /// </summary>
         [Required(ErrorMessage = "{0}必填")]
         [Display(Name = "營業開始時間")]
-        public DateTime OpenTime { get; set; }
+        public TimeSpan OpenTime { get; set; }
 
         /// <summary>
         /// 營業結束時間
         /// </summary>
         [Required(ErrorMessage = "{0}必填")]
         [Display(Name = "營業結束時間")]
-        public DateTime CloseTime { get; set; }
+        public TimeSpan CloseTime { get; set; }
 
         /// <summary>
         /// 店家介紹
@@ -157,9 +164,7 @@ namespace JoinJoy.Models
         public virtual ICollection<StoreRating> StoreRatings { get; set; }
         // 此店家主辦的所有團體活動
         [JsonIgnore]
-        public virtual ICollection<Group> HostedGroups { get; set; } 
-
-
-
+        public virtual ICollection<Group> HostedGroups { get; set; }
+        public string Photo { get; internal set; }
     }
 }

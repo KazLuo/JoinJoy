@@ -3,16 +3,16 @@ namespace JoinJoy.Migrations
     using System;
     using System.Data.Entity.Migrations;
     
-    public partial class fixsomeMaxLength : DbMigration
+    public partial class addgroupinratingmember : DbMigration
     {
         public override void Up()
         {
-            AlterColumn("dbo.Members", "Introduce", c => c.String(maxLength: 100));
+            AddColumn("dbo.MemberRatings", "GroupId", c => c.Int(nullable: false));
         }
         
         public override void Down()
         {
-            AlterColumn("dbo.Members", "Introduce", c => c.String(maxLength: 120));
+            DropColumn("dbo.MemberRatings", "GroupId");
         }
     }
 }

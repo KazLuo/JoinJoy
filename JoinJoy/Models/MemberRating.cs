@@ -21,11 +21,17 @@ namespace JoinJoy.Models
         //public virtual Member Member { get; set; }
         public int MemberId { get; set; }
 
+
         [Display(Name = "被評價的會員ID")]
         [ForeignKey("RatedId")]
         [JsonIgnore]
         public virtual Member RatedMember { get; set; }
         public int RatedId { get; set; }
+
+
+        [Display(Name = "團隊ID")]
+        public int GroupId { get; set; }
+
 
         [Range(1, 5)]
         [Display(Name = "評價分數")]

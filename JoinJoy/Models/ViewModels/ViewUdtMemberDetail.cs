@@ -13,10 +13,10 @@ namespace JoinJoy.Models.ViewModels
         public string nickName { get; set; }
         [MaxLength(100)]
         [Required]
-        public string introduct { get; set; }
+        public string description { get; set; }
         //[MaxLength(3, ErrorMessage = "遊戲喜好最多為3項")]
-        public List<int> gamePrefId { get; set; }
+        public List<int> games { get; set; }
         //[MaxLength(3, ErrorMessage = "城市喜好最多為3項")]
-        public List<int> cityPreId { get; set; }
+        public List<int> cities { get; set; }
     }
 }

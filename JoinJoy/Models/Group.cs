@@ -30,7 +30,7 @@ namespace JoinJoy.Models
         public DateTime EndTime { get; set; }
 
         public int MaxParticipants { get; set; }
-        public int CurrentParticipants { get; set; } = 1;  // 預設為團主
+        public int CurrentParticipants { get; set; }  // 預設為團主
 
         [MaxLength(100)]
         public string Description { get; set; }
@@ -85,7 +85,10 @@ namespace JoinJoy.Models
         [Display(Name = "生成時間")]
         public DateTime CreationDate { get; set; } = DateTime.Now;
         [Display(Name = "開團狀態")]
-        public EnumList.GroupState GroupState { get; set; }
+        public EnumList.GroupState GroupState { get; set; } = EnumList.GroupState.開團中;
+        [Display(Name = "私人團")]
+        public bool isPrivate { get; set; } = false;
+        
         public virtual Member Member { get; set; }
         public virtual Store Store { get; set; }
         //參加團
