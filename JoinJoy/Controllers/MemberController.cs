@@ -49,11 +49,11 @@ namespace JoinJoy.Controllers
                 data = new
                 {
                     userId = member.Id,
-                    nickname = member.Nickname,
-                    account = member.Account,
-                    introduce = member.Introduce,
-                    gamePref = member.GamePreferences.Select(m => m.GameType.TypeName),
-                    cityPref = member.CityPreferences.Select(m => m.City.CityName)
+                    nickName = member.Nickname,
+                    email = member.Account,
+                    description = member.Introduce,
+                    games = member.GamePreferences.Select(m => m.GameType.Id),
+                    cities = member.CityPreferences.Select(m => m.City.Id)
                 }
             });
 
@@ -81,10 +81,10 @@ namespace JoinJoy.Controllers
                 message = "回傳成功",
                 data = new
                 {//少一個photo
-                    nickname = member.Nickname,
-                    introduce = member.Introduce,
-                    gamePref = member.GamePreferences.Select(m => m.GameType.TypeName),
-                    cityPref = member.CityPreferences.Select(m => m.City.CityName)
+                    nickName = member.Nickname,
+                    description = member.Introduce,
+                    games = member.GamePreferences.Select(m => m.GameType.Id),
+                    cities = member.CityPreferences.Select(m => m.City.Id)
                 }
             });
         }
@@ -106,14 +106,14 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "名稱或是介紹字數過長" });
             }
             // 驗證gamePrefId和cityPreId的有效性
-            var existingGameIds = db.GameTypes.Where(g => viewUdtMember.gamePrefId.Contains(g.Id)).Select(g => g.Id).ToList();
-            var existingCityIds = db.Cities.Where(c => viewUdtMember.cityPreId.Contains(c.Id)).Select(c => c.Id).ToList();
-            if (existingGameIds.Count != viewUdtMember.gamePrefId.Count || existingCityIds.Count != viewUdtMember.cityPreId.Count)
+            var existingGameIds = db.GameTypes.Where(g => viewUdtMember.games.Contains(g.Id)).Select(g => g.Id).ToList();
+            var existingCityIds = db.Cities.Where(c => viewUdtMember.cities.Contains(c.Id)).Select(c => c.Id).ToList();
+            if (existingGameIds.Count != viewUdtMember.games.Count || existingCityIds.Count != viewUdtMember.cities.Count)
             {
                 return Content(HttpStatusCode.BadRequest, new { status = false, message = "提供了無效的遊戲或城市ID" });
             }
             //驗證喜好項目不可超過3項
-            if (viewUdtMember.cityPreId.Count > 3 || viewUdtMember.gamePrefId.Count > 3)
+            if (viewUdtMember.cities.Count > 3 || viewUdtMember.games.Count > 3)
             {
                 return Content(HttpStatusCode.BadRequest, new { status = false, message = "城市與遊戲喜好最多不能超過3項" });
             }
@@ -128,15 +128,15 @@ namespace JoinJoy.Controllers
             }
             // 新增會員資料
             member.Nickname = viewUdtMember.nickName;
-            member.Introduce = viewUdtMember.introduct;
+            member.Introduce = viewUdtMember.description;
 
             // 移除會員城市&遊戲喜好
             db.MemberGamePrefs.RemoveRange(member.GamePreferences);
             db.MemberCityPrefs.RemoveRange(member.CityPreferences);
 
             // 新增喜好
-            member.GamePreferences = viewUdtMember.gamePrefId.Select(gameId => new MemberGamePref { MemberId = memberId, GameTypeId = gameId }).ToList();
-            member.CityPreferences = viewUdtMember.cityPreId.Select(cityId => new MemberCityPref { MemberId = memberId, CityId = cityId }).ToList();
+            member.GamePreferences = viewUdtMember.games.Select(gameId => new MemberGamePref { MemberId = memberId, GameTypeId = gameId }).ToList();
+            member.CityPreferences = viewUdtMember.cities.Select(cityId => new MemberCityPref { MemberId = memberId, CityId = cityId }).ToList();
 
             // 儲存
             db.SaveChanges();
@@ -228,7 +228,6 @@ namespace JoinJoy.Controllers
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "遊戲喜好更新成功。" });
         }
         #endregion
-
         /// <summary>
         /// 上傳會員頭像
         /// </summary>
@@ -362,11 +361,11 @@ namespace JoinJoy.Controllers
             return ResponseMessage(result);
         }
         #endregion
-        #region"所有喜好城市列表"
         /// <summary>
         /// 取得所有喜好城市列表
         /// </summary>
         /// <returns></returns>
+        #region"所有喜好城市列表"
         [HttpGet]
         [Route("city")]
         public IHttpActionResult GetCity()
@@ -398,11 +397,12 @@ namespace JoinJoy.Controllers
         }
 
         #endregion
-        #region"所有喜好遊戲類別列表"
+
         /// <summary>
         /// 取得所有喜好遊戲類型列表
         /// </summary>
         /// <returns></returns>
+        #region"所有喜好遊戲類別列表"
         [HttpGet]
         [Route("gameType")]
         public IHttpActionResult GetGameType()
@@ -529,18 +529,25 @@ namespace JoinJoy.Controllers
         /// </summary>
         /// <param name="groupId"></param>
         /// <returns></returns>
+        #region"確認團員評價狀態"
         [HttpGet]
+        [JwtAuthFilter]
         [Route("check-group-ratings/{groupId}")]
         public IHttpActionResult CheckGroupRatings(int groupId)
         {
+
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int userId = (int)userToken["Id"];
+
             // 獲取團隊成員
             var groupMembers = db.GroupParticipants.Where(gp => gp.GroupId == groupId).Select(gp => gp.MemberId).ToList();
 
             // 檢查每位成員是否被評價
             var memberRatingsStatus = groupMembers.Select(memberId =>
-                new {
+                new
+                {
                     MemberId = memberId,
-                    IsRated = db.MemberRatings.Any(mr => mr.RatedId == memberId && mr.GroupId == groupId)
+                    IsRated = db.MemberRatings.Any(mr => mr.RatedId == memberId && mr.GroupId == groupId && mr.MemberId == userId)
                 }).ToList();
 
             // 檢查是否所有成員都已被評價
@@ -552,7 +559,7 @@ namespace JoinJoy.Controllers
                 MembersRatingStatus = memberRatingsStatus
             });
         }
-
+        #endregion
 
 
     }
