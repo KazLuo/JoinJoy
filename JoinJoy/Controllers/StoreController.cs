@@ -205,6 +205,7 @@ namespace JoinJoy.Controllers
             return ResponseMessage(result);
         }
         #endregion
+
         /// <summary>
         /// 取得所有店家ID
         /// </summary>

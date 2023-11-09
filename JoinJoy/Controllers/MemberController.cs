@@ -530,6 +530,7 @@ namespace JoinJoy.Controllers
             return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "評價成功" });
         }
         #endregion
+
         /// <summary>
         /// 確認團員評價狀態
         /// </summary>
@@ -600,33 +601,74 @@ namespace JoinJoy.Controllers
         }
         #endregion
 
-        //#region"取得會員評價"
-        //[HttpGet]
-        //[Route("getrating")]
-        //public IHttpActionResult GetRating(ViewGetRating viewGetRating)
-        //{
-        //    // 取得特定會員的評價列表
-        //    var ratings = db.MemberRatings.Where(r => r.RatedId == viewGetRating.userId);
+        /// <summary>
+        /// 取得會員評價
+        /// </summary>
+        /// <param name="userId">輸入會員id</param>
+        /// <param name="sortBy">用於排序，0=newest,1=highest,2=lowest</param>
+        /// <returns></returns>
+        #region "取得會員評價"
+        [HttpGet]
+        [Route("getrating/{userId}/{sortBy}")]
+        public IHttpActionResult GetRating(int userId, EnumList.RatingFilter sortBy)
+        {
+            try
+            {
+                // 連結 MemberRatings 和 Groups 表
+                var ratingsWithGroup = from rating in db.MemberRatings
+                                       join Group in db.Groups on rating.GroupId equals Group.GroupId
+                                       join Members in db.Members on rating.MemberId equals Members.Id
+                                       where rating.RatedId == userId
+                                       select new
+                                       {
 
-        //    switch (viewGetRating.sortBy)
-        //    {
-        //        case EnumList.RatingFilter.newest:
-        //            ratings = ratings.OrderByDescending(r => r.RatingDate);
-        //            break;
-        //        case EnumList.RatingFilter.hightRating:
-        //            ratings = ratings.OrderByDescending(r => r.Score);
-        //            break;
-        //        case EnumList.RatingFilter.lowRating:
-        //            ratings = ratings.OrderBy(r => r.Score);
-        //            break;
-        //        default:
-        //            ratings = ratings.OrderByDescending(r => r.RatingDate);
-        //            break;
-        //    }
-        //    var ratingList = ratings.ToList(); // 或者進行分頁處理
+                                           userid = rating.MemberId,
+                                           userName = Members.Nickname,
+                                           userPhoto = Members.Photo,
+                                           groupId = Group.GroupId,
+                                           groupName = Group.GroupName,
+                                           totalMemberNum = Group.CurrentParticipants,
+                                           groupdate = Group.StartTime,
+                                           place = Group.IsHomeGroup ? Group.Address : Group.Store.Name, // 假设店家名稱在Group表中是StoreName字段                               RatingDate = rating.RatingDate,
+                                           score = rating.Score,
+                                           comment = rating.Comment,
+                                           ratingDate = rating.RatingDate
 
-        //}
-        //#endregion
+                                       };
+
+                // 根據 sortBy 參數對結果進行排序
+                switch (sortBy)
+                {
+                    case EnumList.RatingFilter.newest:
+                        ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.ratingDate);
+                        break;
+                    case EnumList.RatingFilter.highest:
+                        ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.score);
+                        break;
+                    case EnumList.RatingFilter.lowest:
+                        ratingsWithGroup = ratingsWithGroup.OrderBy(r => r.score);
+                        break;
+                    default:
+                        ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.ratingDate);
+                        break;
+                }
+
+                // 執行查詢並轉換為列表
+                var data = ratingsWithGroup.ToList();
+
+                // 返回響應
+                return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data });
+            }
+            catch
+            {
+                // 返回響應
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "回傳失敗" });
+            }
+        }
+        #endregion
+
+
+
         /// <summary>
         /// 取得所有會員ID
         /// </summary>

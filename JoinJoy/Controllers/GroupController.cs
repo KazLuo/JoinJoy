@@ -566,33 +566,78 @@ namespace JoinJoy.Controllers
         /// <summary>
         /// 取得開團簡易資訊
         /// </summary>
-        /// <param name="groupId">測試可用6和27</param>
+        /// <param name="groupId">測試可用6和28</param>
         /// <returns></returns>
         #region"取得開團簡易資訊"
         [HttpGet]
         [Route("easydetail/{groupId}")]
         public IHttpActionResult GetGroupEasyDetails(int groupId)
         {
+            //var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
+
+            //if (group == null)
+            //{
+            //    return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
+            //}
+            //// 獲取該團隊所有成員的詳細信息
+            //var membersDetails = db.GroupParticipants
+            //                .Where(gp => gp.GroupId == groupId)
+            //                .Join(db.Members, // 加入成員表
+            //                      gp => gp.MemberId, // 團隊參與者的成員ID
+            //                      mem => mem.Id, // 成員表的ID
+            //                      (gp, mem) => new // 結合的結果
+            //                      {
+            //                          userId = gp.MemberId,
+            //                          userName = mem.Nickname,
+            //                          status = gp.AttendanceStatus.ToString(),
+            //                          initNum = gp.InitMember
+            //                      })
+            //                .ToList();
+
             var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
 
             if (group == null)
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
             }
-            // 獲取該團隊所有成員的詳細信息
+
+            // 假設團主的信息存儲在Group表的LeaderId欄位
+            var leaderId = group.MemberId; // 或者是 MemberId，取決於您的資料庫結構
+
+            // 獲取該團隊所有成員的詳細信息，包括團主
             var membersDetails = db.GroupParticipants
                             .Where(gp => gp.GroupId == groupId)
                             .Join(db.Members, // 加入成員表
                                   gp => gp.MemberId, // 團隊參與者的成員ID
                                   mem => mem.Id, // 成員表的ID
                                   (gp, mem) => new // 結合的結果
-                                  {
+                          {
                                       userId = gp.MemberId,
                                       userName = mem.Nickname,
                                       status = gp.AttendanceStatus.ToString(),
                                       initNum = gp.InitMember
                                   })
                             .ToList();
+
+            // 添加團主的詳細信息
+            if (!membersDetails.Any(m => m.userId == leaderId)) // 如果團主不在成員列表中
+            {
+                var leaderDetails = db.Members
+                    .Where(m => m.Id == leaderId)
+                    .Select(m => new
+                    {
+                        userId = m.Id,
+                        userName = m.Nickname,
+                        status = EnumList.JoinGroupState.leader.ToString(), // 或其他適合您需求的狀態
+                initNum = 0 // 假設團主沒有初始成員編號
+            })
+                    .FirstOrDefault();
+
+                if (leaderDetails != null)
+                {
+                    membersDetails.Add(leaderDetails); // 將團主添加到列表中
+                }
+            }
 
             // 接著，我們獲取這個團隊的其他信息
             var groupQuery = db.Groups
@@ -621,9 +666,9 @@ namespace JoinJoy.Controllers
                     g.MaxParticipants,
                     Games = g.GroupGames.Select(gg => new
                     {
-                        GameId = gg.StoreInventory.Id,
-                        GameName = gg.StoreInventory.GameDetails.Name,
-                        GameType = gg.StoreInventory.GameDetails.GameType
+                        gameId = gg.StoreInventory.Id,
+                        gameName = gg.StoreInventory.GameDetails.Name,
+                        gameType = gg.StoreInventory.GameDetails.GameType.Id
                     }).ToList(),
                     g.Description,
                     Tags = new // 假設 Tags 是一個匿名類型
@@ -854,6 +899,7 @@ namespace JoinJoy.Controllers
         }
 
         #endregion
+
         /// <summary>
         /// 取得所有揪團ID
         /// </summary>
