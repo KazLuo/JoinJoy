@@ -141,7 +141,7 @@ namespace JoinJoy.Controllers
             // 儲存
             db.SaveChanges();
 
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "會員詳細資訊已更新" });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "會員詳細資訊已更新",data=new { nickName= member.Nickname, description= member.Introduce,games= member.GamePreferences.Select(m=>m.GameTypeId),cities = member.CityPreferences.Select(m => m.CityId) } });
         }
         #endregion
         /// <summary>
@@ -457,7 +457,7 @@ namespace JoinJoy.Controllers
         }
         #endregion
         /// <summary>
-        /// 會員評價
+        /// 評價會員
         /// </summary>
         /// <param name="viewRatingMember"></param>
         /// <returns></returns>
@@ -535,36 +535,7 @@ namespace JoinJoy.Controllers
         /// </summary>
         /// <param name="groupId"></param>
         /// <returns></returns>
-        #region"確認團員評價狀態"
-        //[HttpGet]
-        //[JwtAuthFilter]
-        //[Route("check-group-ratings/{groupId}")]
-        //public IHttpActionResult CheckGroupRatings(int groupId)
-        //{
-
-        //    var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
-        //    int userId = (int)userToken["Id"];
-
-        //    // 獲取團隊成員
-        //    var groupMembers = db.GroupParticipants.Where(gp => gp.GroupId == groupId).Select(gp => gp.MemberId).ToList();
-
-        //    // 檢查每位成員是否被評價
-        //    var memberRatingsStatus = groupMembers.Select(memberId =>
-        //        new
-        //        {
-        //            MemberId = memberId,
-        //            IsRated = db.MemberRatings.Any(mr => mr.RatedId == memberId && mr.GroupId == groupId && mr.MemberId == userId)
-        //        }).ToList();
-
-        //    // 檢查是否所有成員都已被評價
-        //    var isAllRated = memberRatingsStatus.All(mrs => mrs.IsRated);
-
-        //    return Ok(new
-        //    {
-        //        IsAllMembersRated = isAllRated,
-        //        MembersRatingStatus = memberRatingsStatus
-        //    });
-        //}
+       
         #region"確認團員評價狀態"
         [HttpGet]
         [JwtAuthFilter]
@@ -629,8 +600,66 @@ namespace JoinJoy.Controllers
         }
         #endregion
 
+        //#region"取得會員評價"
+        //[HttpGet]
+        //[Route("getrating")]
+        //public IHttpActionResult GetRating(ViewGetRating viewGetRating)
+        //{
+        //    // 取得特定會員的評價列表
+        //    var ratings = db.MemberRatings.Where(r => r.RatedId == viewGetRating.userId);
 
+        //    switch (viewGetRating.sortBy)
+        //    {
+        //        case EnumList.RatingFilter.newest:
+        //            ratings = ratings.OrderByDescending(r => r.RatingDate);
+        //            break;
+        //        case EnumList.RatingFilter.hightRating:
+        //            ratings = ratings.OrderByDescending(r => r.Score);
+        //            break;
+        //        case EnumList.RatingFilter.lowRating:
+        //            ratings = ratings.OrderBy(r => r.Score);
+        //            break;
+        //        default:
+        //            ratings = ratings.OrderByDescending(r => r.RatingDate);
+        //            break;
+        //    }
+        //    var ratingList = ratings.ToList(); // 或者進行分頁處理
+
+        //}
+        //#endregion
+        /// <summary>
+        /// 取得所有會員ID
+        /// </summary>
+        /// <returns></returns>
+        #region"取得所有會員ID"
+        [HttpGet]
+        [Route("getallmemberid")]
+        public IHttpActionResult GetAllGroupId()
+        {
+            try
+            {
+                // 檢索所有店家的基本信息
+                var stores = db.Members.Select(m => new { m.Id, m.Nickname, m.Photo }).ToList();
+
+                // 在記憶體中構建照片URL
+                var data = stores.Select(m => new {
+                    userId = m.Id,
+                    nickName = m.Nickname,
+                    photo = string.IsNullOrEmpty(m.Photo) ? null : $"http://4.224.16.99/upload/profile/{m.Photo}"
+                }).ToList();
+
+                return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data });
+            }
+            catch (Exception)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "回傳失敗" });
+            }
+        }
         #endregion
+
+
+
+
 
 
     }

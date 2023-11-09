@@ -205,6 +205,36 @@ namespace JoinJoy.Controllers
             return ResponseMessage(result);
         }
         #endregion
+        /// <summary>
+        /// 取得所有店家ID
+        /// </summary>
+        /// <returns></returns>
+        #region"取得所有店家ID"
+        [HttpGet]
+        [Route("getallstoreid")]
+        public IHttpActionResult GetAllGroupId()
+        {
+            try
+            {
+                // 檢索所有店家的基本信息
+                var stores = db.Stores.Select(m => new { m.Id, m.Name, m.Photo }).ToList();
+
+                // 在記憶體中構建照片URL
+                var data = stores.Select(m => new {
+                    storeId = m.Id,
+                    name = m.Name,
+                    photo = string.IsNullOrEmpty(m.Photo) ? null : $"http://4.224.16.99/upload/store/{m.Photo}"
+                }).ToList();
+
+                return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data });
+            }
+            catch (Exception)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "回傳失敗" });
+            }
+        }
+        #endregion
+
 
 
     }

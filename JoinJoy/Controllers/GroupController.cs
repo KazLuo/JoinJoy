@@ -854,6 +854,28 @@ namespace JoinJoy.Controllers
         }
 
         #endregion
+        /// <summary>
+        /// 取得所有揪團ID
+        /// </summary>
+        /// <returns></returns>
+        #region"取得所有揪團ID"
+        [HttpGet]
+        [Route("getallgroupid")]
+        public IHttpActionResult GetAllGroupId()
+        {
+           
+            try
+            {
+                var data = db.Groups.Select(m => new { groupId=m.GroupId,groupName=m.GroupName }).ToList();
+                return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data });
+            }
+            catch (Exception)
+            {
+
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = true, message = "回傳失敗" });
+            }
+        }
+        #endregion
 
     }
 

@@ -22,6 +22,14 @@ namespace JoinJoy.Models
 
         }
 
+        public enum RatingFilter
+        {
+            newest,
+            hightRating,
+            lowRating,
+
+        }
+
 
     }
 }
