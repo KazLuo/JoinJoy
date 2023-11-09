@@ -236,7 +236,77 @@ namespace JoinJoy.Controllers
         }
         #endregion
 
+        #region"評價店家"
+        //#region"評價會員"
+        //[HttpPost]
+        //[JwtAuthFilter]
+        //[Route("ratingmember")]
+        //public IHttpActionResult RatingStore(ViewRatingMember viewRatingMember)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
 
+        //    var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+        //    int userId = (int)userToken["Id"];
+        //    //驗證會員
+        //    var memberToRate = db.Members.FirstOrDefault(m => m.Id == viewRatingMember.memberId);
+        //    if (memberToRate == null)
+        //    {
+        //        return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "被評價的會員不存在" });
+        //    }
+        //    //驗證會員有參加此團
+        //    var isjoin = db.GroupParticipants.Any(m => m.GroupId == viewRatingMember.groupId && m.MemberId == viewRatingMember.memberId);
+        //    if (!isjoin)
+        //    {
+        //        return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "只有參加此團的人員能夠評價" });
+        //    }
+
+        //    // 確保用戶不是在評價自己
+        //    if (userId == viewRatingMember.memberId)
+        //    {
+        //        return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您不能評價自己" });
+        //    }
+
+        //    // 檢查用戶是否已經給這個會員評過分
+        //    var existingRating = db.MemberRatings.FirstOrDefault(r => r.RatedId == viewRatingMember.memberId && r.MemberId == userId);
+        //    if (existingRating != null)
+        //    {
+        //        return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您已經給該會員評過分" });
+        //    }
+
+        //    // 創建一個新的評價記錄
+        //    var rating = new MemberRating
+        //    {
+        //        GroupId = viewRatingMember.groupId,
+        //        MemberId = userId,
+        //        RatedId = viewRatingMember.memberId,
+        //        Score = viewRatingMember.score,
+        //        Comment = viewRatingMember.comment,
+        //        RatingDate = DateTime.Now
+        //    };
+
+        //    // 將評價記錄加入資料庫
+        //    db.MemberRatings.Add(rating);
+
+        //    // 儲存變更
+        //    try
+        //    {
+        //        db.SaveChanges();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // 處理錯誤，例如記錄錯誤或返回一個錯誤信息
+        //        return InternalServerError(ex);
+        //    }
+
+
+        //    // 返回成功信息
+        //    return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "評價成功" });
+        //}
+        //#endregion
+        #endregion
 
     }
 

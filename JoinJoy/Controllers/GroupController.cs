@@ -205,24 +205,38 @@ namespace JoinJoy.Controllers
         /// <returns></returns>
         #region "GroupComment"
         [HttpGet]
-        //[JwtAuthFilter]
         [Route("comments/{groupId}")]
         public IHttpActionResult GetComment(int? groupId)
         {
-
             if (groupId == null)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "沒有groupId" });
             }
 
-            var data = db.GroupComments.Where(m => m.GroupId == groupId).Select(m => new { userId = m.MemberId, m.CommentContent, m.CommentDate }).ToList();
-            if (data == null || !data.Any())
+            var commentsWithMemberDetails = db.GroupComments
+                .Where(m => m.GroupId == groupId)
+                .Join(db.Members, // 加入會員表
+                      comment => comment.MemberId, // 留言的會員ID
+                      member => member.Id, // 會員表的ID
+                      (comment, member) => new // 結合的結果
+              {
+                          userId = comment.MemberId,
+                          userName = member.Nickname, 
+                  userPhoto = member.Photo, // 照片路徑
+                  commentContent = comment.CommentContent,
+                          commentDate = comment.CommentDate
+                      })
+                .ToList();
+
+            if (commentsWithMemberDetails == null || !commentsWithMemberDetails.Any())
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "尚未有留言" });
             }
 
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "讀取留言成功", data });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "讀取留言成功", data = commentsWithMemberDetails });
         }
+
+
         #endregion
         /// <summary>
         /// 申請入團
