@@ -48,6 +48,12 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "開團人數上限為12人" });
             }
 
+            // 檢查最大參與者人數
+            if (model.totalMemberNum == 0 )
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "開團最大人數不可為0" });
+            }
+
             // 檢查開團者與攜帶人數是否超過totalMemberNum
             if (1+model.initNum > model.totalMemberNum)
             {
@@ -573,26 +579,6 @@ namespace JoinJoy.Controllers
         [Route("easydetail/{groupId}")]
         public IHttpActionResult GetGroupEasyDetails(int groupId)
         {
-            //var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
-
-            //if (group == null)
-            //{
-            //    return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
-            //}
-            //// 獲取該團隊所有成員的詳細信息
-            //var membersDetails = db.GroupParticipants
-            //                .Where(gp => gp.GroupId == groupId)
-            //                .Join(db.Members, // 加入成員表
-            //                      gp => gp.MemberId, // 團隊參與者的成員ID
-            //                      mem => mem.Id, // 成員表的ID
-            //                      (gp, mem) => new // 結合的結果
-            //                      {
-            //                          userId = gp.MemberId,
-            //                          userName = mem.Nickname,
-            //                          status = gp.AttendanceStatus.ToString(),
-            //                          initNum = gp.InitMember
-            //                      })
-            //                .ToList();
 
             var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
 
@@ -615,7 +601,7 @@ namespace JoinJoy.Controllers
                                       userId = gp.MemberId,
                                       userName = mem.Nickname,
                                       status = gp.AttendanceStatus.ToString(),
-                                      initNum = gp.InitMember
+                                      initNum = gp.InitMember +1//前端希望init等於加入總數所以+1本人
                                   })
                             .ToList();
 
@@ -629,13 +615,14 @@ namespace JoinJoy.Controllers
                         userId = m.Id,
                         userName = m.Nickname,
                         status = EnumList.JoinGroupState.leader.ToString(), // 或其他適合您需求的狀態
-                initNum = 0 // 假設團主沒有初始成員編號
-            })
+                        initNum = group.InitMember + 1 //前端希望init等於加入總數所以+1本人
+                    })
                     .FirstOrDefault();
 
                 if (leaderDetails != null)
                 {
-                    membersDetails.Add(leaderDetails); // 將團主添加到列表中
+                    // 將團主插入到列表的第一位
+                    membersDetails.Insert(0, leaderDetails);
                 }
             }
 
@@ -699,7 +686,7 @@ namespace JoinJoy.Controllers
             if (groupQuery.Tags.Casual) tags.Add("輕鬆");
             if (groupQuery.Tags.Competitive) tags.Add("競技");
 
-            // 根據是否為家庭團隊來決定是否顯示商店和遊戲資訊
+            // 根據是否為自家團隊來決定是否顯示商店和遊戲資訊
             object storeInfo = groupQuery.IsHomeGroup ? null : new
             {
                 storeId = groupQuery.StoreId,
@@ -727,7 +714,7 @@ namespace JoinJoy.Controllers
                 members = membersDetails,
                 tags = tags // 使用處理後的標籤列表
             };
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = false, message = "回傳成功", data = new { groupWithGames } });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { groupWithGames } });
 
         }
         #endregion
