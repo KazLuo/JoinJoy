@@ -248,14 +248,6 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202311070921019_add group in ratingmember.cs" />
-    <Compile Include="Migrations\202311070921019_add group in ratingmember.Designer.cs">
-      <DependentUpon>202311070921019_add group in ratingmember.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202311100341571_add group.cs" />
-    <Compile Include="Migrations\202311100341571_add group.Designer.cs">
-      <DependentUpon>202311100341571_add group.cs</DependentUpon>
-    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
     <Compile Include="Models\Context.cs" />
@@ -379,14 +371,6 @@
     <None Include="packages.config" />
     <Content Include="Scripts\jquery-3.4.1.slim.min.map" />
     <Content Include="Scripts\jquery-3.4.1.min.map" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Migrations\202311070921019_add group in ratingmember.resx">
-      <DependentUpon>202311070921019_add group in ratingmember.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202311100341571_add group.resx">
-      <DependentUpon>202311100341571_add group.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

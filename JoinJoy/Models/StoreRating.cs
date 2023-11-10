@@ -15,21 +15,23 @@ namespace JoinJoy.Models
         public int Id { get; set; }
 
         [Display(Name = "會員ID")]
-        [Required]
+        //[Required]
         [ForeignKey("MemberId")]
         [JsonIgnore]
-        
+     
         public virtual Member Member { get; set; }
         public int MemberId { get; set; }
+
 
 
         [Display(Name = "店家ID")]
         [Required]
         [ForeignKey("StoreId")]
         [JsonIgnore]
-        
+      
         public virtual Store Store { get; set; }
         public int StoreId { get; set; }
+
 
         [Display(Name = "團隊ID")]
         [Required]

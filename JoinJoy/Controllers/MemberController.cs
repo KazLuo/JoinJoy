@@ -14,6 +14,7 @@ using System.IO;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Data.Entity.Validation;
 
 namespace JoinJoy.Controllers
 {
@@ -141,7 +142,7 @@ namespace JoinJoy.Controllers
             // 儲存
             db.SaveChanges();
 
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "會員詳細資訊已更新",data=new { nickName= member.Nickname, description= member.Introduce,games= member.GamePreferences.Select(m=>m.GameTypeId),cities = member.CityPreferences.Select(m => m.CityId) } });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "會員詳細資訊已更新", data = new { nickName = member.Nickname, description = member.Introduce, games = member.GamePreferences.Select(m => m.GameTypeId), cities = member.CityPreferences.Select(m => m.CityId) } });
         }
         #endregion
         /// <summary>
@@ -480,8 +481,8 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "被評價的會員不存在" });
             }
-            //驗證會員有參加此團
-            var isjoin = db.GroupParticipants.Any(m => m.GroupId == viewRatingMember.groupId && m.MemberId == viewRatingMember.memberId);
+            //驗證會員有參加此團(包含團主)
+            var isjoin = db.GroupParticipants.Any(m => m.GroupId == viewRatingMember.groupId && m.MemberId == viewRatingMember.memberId) || db.Groups.Any(g => g.GroupId == viewRatingMember.groupId && g.MemberId == viewRatingMember.memberId); 
             if (!isjoin)
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "只有參加此團的人員能夠評價" });
@@ -536,7 +537,7 @@ namespace JoinJoy.Controllers
         /// </summary>
         /// <param name="groupId"></param>
         /// <returns></returns>
-       
+
         #region"確認團員評價狀態"
         [HttpGet]
         [JwtAuthFilter]
@@ -552,8 +553,8 @@ namespace JoinJoy.Controllers
                 return Ok(new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊還在開團狀態，尚無團隊評價資訊" });
             }
 
-            
-         
+
+
 
             // 獲取團隊成員，但排除登入者本人
             var groupMembers = db.GroupParticipants
@@ -572,11 +573,11 @@ namespace JoinJoy.Controllers
             var isjoin = db.GroupParticipants.Any(m => m.GroupId == groupId && m.MemberId == userId);
             if (!isjoin)
             {
-                if(groupLeaderId != userId)
+                if (groupLeaderId != userId)
                 {
                     return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有參加此團的人能驗證評價狀態" });
                 }
-                
+
             }
 
             // 檢查每位成員是否被評價，包括團主
@@ -587,15 +588,19 @@ namespace JoinJoy.Controllers
                     memberName = db.Members.Where(m => m.Id == memberId).Select(m => m.Nickname).FirstOrDefault(), // 取得會員名稱
                     memberPhoto = db.Members.Where(m => m.Id == memberId).Select(m => m.Photo).FirstOrDefault(), // 取得會員照片路徑
                     isRated = db.MemberRatings.Any(mr => mr.RatedId == memberId && mr.GroupId == groupId),
-                    score = db.MemberRatings.Where(mr => mr.RatedId == memberId && mr.GroupId == groupId).Select(mr=>mr.Score).FirstOrDefault(),
+                    score = db.MemberRatings.Where(mr => mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Score).FirstOrDefault(),
                     comment = db.MemberRatings.Where(mr => mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Comment).FirstOrDefault(),
                 }).ToList();
 
             // 檢查是否所有成員都已被評價（包括團主）
             var isAllRated = memberRatingsStatus.All(mrs => mrs.isRated);
 
-            return Content(HttpStatusCode.OK,new { statusCode = HttpStatusCode.OK, status = true, message = "評價成功",
-                data=new
+            return Content(HttpStatusCode.OK, new
+            {
+                statusCode = HttpStatusCode.OK,
+                status = true,
+                message = "評價成功",
+                data = new
                 {
                     isAllRated = isAllRated,
                     ratingStatus = memberRatingsStatus
@@ -688,7 +693,8 @@ namespace JoinJoy.Controllers
                 var stores = db.Members.Select(m => new { m.Id, m.Nickname, m.Photo }).ToList();
 
                 // 在記憶體中構建照片URL
-                var data = stores.Select(m => new {
+                var data = stores.Select(m => new
+                {
                     userId = m.Id,
                     nickName = m.Nickname,
                     photo = string.IsNullOrEmpty(m.Photo) ? null : $"http://4.224.16.99/upload/profile/{m.Photo}"
@@ -700,6 +706,111 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "回傳失敗" });
             }
+        }
+        #endregion
+
+        /// <summary>
+        /// 評價店家
+        /// </summary>
+        /// <param name="viewStoreRating"></param>
+        /// <returns></returns>
+        #region"評價店家"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("ratingstore")]
+        public IHttpActionResult RatingStore(ViewStoreRating viewStoreRating)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int userId = (int)userToken["Id"];
+            //驗證店家
+            var storeToRate = db.Stores.FirstOrDefault(m => m.Id == viewStoreRating.storeId);
+            if (storeToRate == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "被評價的店家不存在" });
+            }
+            //驗證會員有參加此團
+
+
+            var isParticipantOrLeader = db.GroupParticipants.Any(gp => gp.GroupId == viewStoreRating.groupId && gp.MemberId == userId)
+                            || db.Groups.Any(g => g.GroupId == viewStoreRating.groupId && g.MemberId == userId);
+
+            if (!isParticipantOrLeader)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "只有參加此團的人員或團主能夠評價" });
+            }
+
+            // 確保用戶不是在評價自己店家
+            if (db.Stores.Any(m => m.MemberId == userId))
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您不能評價自己店家" });
+            }
+
+            // 確定店家是否已經預約
+            if (!db.Groups.Any(m=>m.GroupId == viewStoreRating.groupId && m.GroupState == EnumList.GroupState.已預約))
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "店家尚未預約無法進行評價" });
+            }
+
+            // 檢查用戶是否已經給這個店家評過分
+            var existingRating = db.StoreRatings.FirstOrDefault(r => r.StoreId == viewStoreRating.storeId && r.MemberId == userId && r.GroupId == viewStoreRating.groupId);
+            if (existingRating != null)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您已經給該店家評過分" });
+            }
+
+            // 創建一個新的評價記錄
+            var Storerating = new StoreRating
+            {
+                GroupId = viewStoreRating.groupId,
+                StoreId = viewStoreRating.storeId,
+                Clean = viewStoreRating.clean,
+                Service = viewStoreRating.service,
+                Variety = viewStoreRating.variety,
+                Value = viewStoreRating.value,
+                Comment = viewStoreRating.comment,
+                RatingDate = DateTime.Now,
+                MemberId = userId
+            };
+
+            // 將評價記錄加入資料庫
+            db.StoreRatings.Add(Storerating);
+
+            // 儲存變更
+            try
+            {
+                db.SaveChanges();
+            }
+            //驗證錯誤原因
+            catch (DbEntityValidationException dbEx)
+            {
+                var errorMessages = dbEx.EntityValidationErrors
+                                        .SelectMany(validationError => validationError.ValidationErrors)
+                                        .Select(e => e.ErrorMessage);
+
+                var fullErrorMessage = string.Join("; ", errorMessages);
+
+                var exceptionMessage = string.Concat(dbEx.Message, " 驗證失敗: ", fullErrorMessage);
+
+                // 記錄錯誤或返回一個錯誤信息
+                return Content(HttpStatusCode.InternalServerError, new { message = exceptionMessage });
+            }
+            catch (Exception ex)
+            {
+                // 處理其他類型的錯誤
+                return InternalServerError(ex);
+            }
+
+
+
+
+
+            // 返回成功信息
+            return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "評價成功" });
         }
         #endregion
 

@@ -8,9 +8,9 @@ namespace JoinJoy.Models.ViewModels
 {
     public class ViewStoreRating
     {
-        [Required]
+        
         public int storeId { get; set; }
-        [Required]
+       
         public int groupId { get; set; }
         [Range(1, 5)]
         public int clean { get; set; }
@@ -20,7 +20,7 @@ namespace JoinJoy.Models.ViewModels
         public int variety { get; set; }
         [Range(1, 5)]
         public int value { get; set; }
-        [MaxLength(100)]
+        [MaxLength(500)]
         public string comment { get; set; }
     }
 }
