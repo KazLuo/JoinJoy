@@ -540,7 +540,7 @@ namespace JoinJoy.Controllers
         #region"確認團員評價狀態"
         [HttpGet]
         [JwtAuthFilter]
-        [Route("check-group-ratings/{groupId}")]
+        [Route("checkgroupratings/{groupId}")]
         public IHttpActionResult CheckGroupRatings(int groupId)
         {
             var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
@@ -551,6 +551,8 @@ namespace JoinJoy.Controllers
             {
                 return Ok(new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊還在開團狀態，尚無團隊評價資訊" });
             }
+
+            
          
 
             // 獲取團隊成員，但排除登入者本人
@@ -582,6 +584,8 @@ namespace JoinJoy.Controllers
                 new
                 {
                     memberId = memberId,
+                    memberName = db.Members.Where(m => m.Id == memberId).Select(m => m.Nickname).FirstOrDefault(), // 取得會員名稱
+                    memberPhoto = db.Members.Where(m => m.Id == memberId).Select(m => m.Photo).FirstOrDefault(), // 取得會員照片路徑
                     isRated = db.MemberRatings.Any(mr => mr.RatedId == memberId && mr.GroupId == groupId),
                     score = db.MemberRatings.Where(mr => mr.RatedId == memberId && mr.GroupId == groupId).Select(mr=>mr.Score).FirstOrDefault(),
                     comment = db.MemberRatings.Where(mr => mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Comment).FirstOrDefault(),

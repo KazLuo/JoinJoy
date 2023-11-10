@@ -31,6 +31,10 @@ namespace JoinJoy.Models
         public virtual Store Store { get; set; }
         public int StoreId { get; set; }
 
+        [Display(Name = "團隊ID")]
+        [Required]
+        public int GroupId { get; set; }
+
         [Range(1, 5)]
         [Display(Name = "環境整潔")]
         public int Clean { get; set; }

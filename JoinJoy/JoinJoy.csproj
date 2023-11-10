@@ -252,9 +252,9 @@
     <Compile Include="Migrations\202311070921019_add group in ratingmember.Designer.cs">
       <DependentUpon>202311070921019_add group in ratingmember.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202311071020419_111.cs" />
-    <Compile Include="Migrations\202311071020419_111.Designer.cs">
-      <DependentUpon>202311071020419_111.cs</DependentUpon>
+    <Compile Include="Migrations\202311100341571_add group.cs" />
+    <Compile Include="Migrations\202311100341571_add group.Designer.cs">
+      <DependentUpon>202311100341571_add group.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
@@ -286,6 +286,7 @@
     <Compile Include="Models\ViewModels\ViewRatingMember.cs" />
     <Compile Include="Models\ViewModels\ViewRegister.cs" />
     <Compile Include="Models\ViewModels\ViewReviewGroup.cs" />
+    <Compile Include="Models\ViewModels\ViewStoreRating.cs" />
     <Compile Include="Models\ViewModels\ViewUdtMemberDetail.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Security\Argon2Verify.cs" />
@@ -383,8 +384,8 @@
     <EmbeddedResource Include="Migrations\202311070921019_add group in ratingmember.resx">
       <DependentUpon>202311070921019_add group in ratingmember.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202311071020419_111.resx">
-      <DependentUpon>202311071020419_111.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202311100341571_add group.resx">
+      <DependentUpon>202311100341571_add group.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
