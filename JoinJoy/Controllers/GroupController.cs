@@ -68,7 +68,7 @@ namespace JoinJoy.Controllers
             if (!model.isHomeGroup)
             {
 
-                if (model.GameIds.Count > 5)
+                if (model.gameId.Count > 5)
                 {
                     return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您只能選擇最多五款遊戲" });
                 }
@@ -126,7 +126,7 @@ namespace JoinJoy.Controllers
             db.SaveChanges(); // 儲存團體以獲取 GroupId
             if (!model.isHomeGroup)
             {
-                foreach (var gameId in model.GameIds)
+                foreach (var gameId in model.gameId)
                 {
                     // 在這裡檢查每個 gameId 是否存在於 StoreInventories 表中
                     var storeInventory = db.StoreInventories.FirstOrDefault(si => si.Id == gameId);
@@ -385,16 +385,16 @@ namespace JoinJoy.Controllers
         /// <summary>
         /// 查詢預約時段剩餘位置
         /// </summary>
-        /// <param name="storeName">測試可以用"六角學院桌遊店"</param>
+        /// <param name="storeId">測試可以用"7"</param>
         /// <param name="date">測試可以使用2023-11-01</param>
         /// <returns></returns>
         #region"查看店家可預約時段"
         [HttpGet]
-        [Route("checkability/{storeName}/{date}")]
-        public IHttpActionResult GetStoreOperatingHoursWithAvailability(string storeName, DateTime date)
+        [Route("checkability/{storeId}/{date}")]
+        public IHttpActionResult GetStoreOperatingHoursWithAvailability(int storeId, DateTime date)
         {
             // 從資料庫中查找商店實體
-            var store = db.Stores.FirstOrDefault(s => s.Name == storeName);
+            var store = db.Stores.FirstOrDefault(s => s.Id == storeId);
             if (store == null)
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到指定的店家" });

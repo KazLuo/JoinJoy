@@ -235,8 +235,128 @@ namespace JoinJoy.Controllers
             }
         }
         #endregion
+        /// <summary>
+        /// 取得所有店家評價
+        /// </summary>
+        /// <param name="storeId">輸入店家目前可用7測試</param>
+        /// <param name="sortBy">0 =newest,1=highest,2=lowest</param>
+        /// <returns></returns>
+        #region"取得店家所有評價"
+        [HttpGet]
+        [Route("getstorerating/{storeId}/{sortBy}")]
+        public IHttpActionResult GetStoreRating(int storeId,EnumList.RatingFilter sortBy)
+        {
+            var storeRatings = from StoreRating in db.StoreRatings
+                               join Group in db.Groups on StoreRating.GroupId equals Group.GroupId
+                               join Member in db.Members on StoreRating.MemberId equals Member.Id
+                               join Store in db.Stores on Group.StoreId equals Store.Id
+                               where StoreRating.StoreId == storeId
+                               select new
+                               {
+                                   userId = Member.Id,
+                                   userName = Member.Nickname, // 或其他識別會員的字段
+                                   userImg = Member.Photo,
+                                   groupName = Group.GroupName, // 或其他識別團隊的字段
+                                   groupDate = Group.StartTime,
+                                   memberNum = Group.CurrentParticipants,
+                                   storeName = Store.Name,
+                                   storeId = Store.Id,
+                                   environment = StoreRating.Clean,
+                                   service = StoreRating.Service,
+                                   game = StoreRating.Variety,
+                                   costValue = StoreRating.Value,
+                                   commentId =StoreRating.Id,
+                                   msg = StoreRating.Comment,
+                                   commentDate = StoreRating.RatingDate
+                                   
+                               };
 
-      
+            if (!storeRatings.Any())
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "店家不存在。" });
+            }
+            var ratingsList = storeRatings.ToList();
+            // 計算每個評價的平均值
+            var ratingsWithAverage = storeRatings.ToList().Select(sr => new
+            {
+                commentBy = new 
+                {
+                    sr.userId,
+                    sr.userName,
+                    sr.userImg,
+                },
+                group = new 
+                {
+                    sr.groupName,
+                    sr.groupDate,
+                    sr.memberNum,
+                    sr.storeId,
+                    sr.storeName,
+                },
+                sr.commentId,
+                sr.msg,
+                sr.commentDate,
+                score = (sr.environment + sr.service + sr.game + sr.costValue) / 4.0 // 有四個評分項目
+            });
+
+           
+
+            var totalCleanAverage = ratingsList.Average(sr => sr.environment);
+            var totalServiceAverage = ratingsList.Average(sr => sr.service);
+            var totalVarietyAverage = ratingsList.Average(sr => sr.game);
+            var totalValueAverage = ratingsList.Average(sr => sr.costValue);
+
+            // 根據 sortBy 參數對結果進行排序
+            switch (sortBy)
+            {
+                case EnumList.RatingFilter.newest:
+                    ratingsWithAverage = ratingsWithAverage.OrderByDescending(r => r.commentDate);
+                    break;
+                case EnumList.RatingFilter.highest:
+                    ratingsWithAverage = ratingsWithAverage.OrderByDescending(r => r.score);
+                    break;
+                case EnumList.RatingFilter.lowest:
+                    ratingsWithAverage = ratingsWithAverage.OrderBy(r => r.score);
+                    break;
+                default:
+                    ratingsWithAverage = ratingsWithAverage.OrderByDescending(r => r.commentDate);
+                    break;
+            }
+
+            // 執行查詢並轉換為列表
+            var comment = ratingsWithAverage.ToList();
+
+            // 計算所有評價的整體平均值
+            var overallAvgRating = ratingsWithAverage.Average(r => r.score);
+
+            // 計算評價的總數量
+            var totalRatingsCount = ratingsList.Count;
+
+            return Ok(new
+            {
+                averageScore =new
+                {
+                    environment = totalCleanAverage,
+                    service = totalServiceAverage,
+                    game = totalVarietyAverage,
+                    costValue = totalValueAverage,
+                    overall = overallAvgRating,
+                    
+                },
+                comments = comment
+               
+                //totalRatingsCount = totalRatingsCount,
+                //allAverageRating = overallAvgRating,
+                //cleanAverageRating = totalCleanAverage,
+                //serviceAverage = totalServiceAverage,
+                //varietyAverage = totalVarietyAverage,
+                //valueAverage = totalValueAverage,
+                //data,
+
+            });
+        }
+        #endregion
+
 
     }
 
