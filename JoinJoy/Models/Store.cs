@@ -100,7 +100,7 @@ namespace JoinJoy.Models
         /// <summary>
         /// 店家Iframe
         /// </summary>
-        [Required(ErrorMessage = "{0}必填")]
+        //[Required(ErrorMessage = "{0}必填")]
         [Display(Name = "店家Iframe")]
         public string Iframe { get; set; }
 
