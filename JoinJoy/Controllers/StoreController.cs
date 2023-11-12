@@ -436,8 +436,10 @@ namespace JoinJoy.Controllers
 
             return Ok(new
             {
+                totalRatingsCount = totalRatingsCount,
                 averageScore =new
                 {
+                    
                     environment = totalCleanAverage,
                     service = totalServiceAverage,
                     game = totalVarietyAverage,

@@ -631,25 +631,36 @@ namespace JoinJoy.Controllers
                                        select new
                                        {
 
-                                           userid = rating.MemberId,
-                                           userName = Members.Nickname,
-                                           userPhoto = Members.Photo,
-                                           groupId = Group.GroupId,
-                                           groupName = Group.GroupName,
-                                           totalMemberNum = Group.CurrentParticipants,
-                                           groupdate = Group.StartTime,
-                                           place = Group.IsHomeGroup ? Group.Address : Group.Store.Name, // 假设店家名稱在Group表中是StoreName字段                               RatingDate = rating.RatingDate,
+                                           commentId = rating.Id,
+                                           msg = rating.Comment,
                                            score = rating.Score,
-                                           comment = rating.Comment,
-                                           ratingDate = rating.RatingDate
+                                           commentDate = rating.RatingDate,
+                                           commentBy = new
+                                           {
+                                               userid = rating.MemberId,
+                                               userName = Members.Nickname,
+                                               userPhoto = Members.Photo,
 
+                                           },
+
+                                           groups = new
+                                           {
+                                               groupId = Group.GroupId,
+                                               groupName = Group.GroupName,
+                                               memberQtu = Group.CurrentParticipants,
+                                               groupDate = Group.StartTime,
+                                               storeName = Group.IsHomeGroup ? Group.Address : Group.Store.Name,
+                                               storeId = Group.Store.Id,
+
+                                           },
                                        };
-
+                var averageScore = ratingsWithGroup.Average(a => a.score);
+               
                 // 根據 sortBy 參數對結果進行排序
                 switch (sortBy)
                 {
                     case EnumList.RatingFilter.newest:
-                        ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.ratingDate);
+                        ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.commentDate);
                         break;
                     case EnumList.RatingFilter.highest:
                         ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.score);
@@ -658,15 +669,17 @@ namespace JoinJoy.Controllers
                         ratingsWithGroup = ratingsWithGroup.OrderBy(r => r.score);
                         break;
                     default:
-                        ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.ratingDate);
+                        ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.commentDate);
                         break;
                 }
 
                 // 執行查詢並轉換為列表
-                var data = ratingsWithGroup.ToList();
+                var comments = ratingsWithGroup.ToList();
+
+                var allCommentCount = ratingsWithGroup.ToList().Count;
 
                 // 返回響應
-                return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data });
+                return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", allCommentCount, comments });
             }
             catch
             {

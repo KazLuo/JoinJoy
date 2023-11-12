@@ -21,6 +21,8 @@ namespace JoinJoy.Models
         public virtual Store Store { get; set; }  // Navigation property
         public int StoreId { get; set; } // 這將作為外鍵連接到Store
 
+        public bool IsCover { get; set; } = false;
+
         [Required]
         public DateTime InitDate { get; set; } = DateTime.Now;
     }
