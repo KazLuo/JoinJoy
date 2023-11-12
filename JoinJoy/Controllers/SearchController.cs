@@ -16,20 +16,24 @@ namespace JoinJoy.Controllers
     public class SearchController : ApiController
     {
         private Context db = new Context();
-
+        /// <summary>
+        /// 搜尋店家功能
+        /// </summary>
+        /// <param name="city">帶入城市Id 目前有 2 & 15(台北 & 高雄)</param>
+        /// <returns></returns>
         [HttpGet]
         [Route("search/stores")]
         public IHttpActionResult SearchStores(int city/*, string district = ""*/)
         {
             var cities = db.Cities.FirstOrDefault(c => c.Id == city);
-            if (string.IsNullOrEmpty(city.ToString()))
+            if (cities == null || string.IsNullOrEmpty(city.ToString()))
             {
-                return Content(HttpStatusCode.BadRequest, "縣市不可為空");
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "縣市不可為空，或是城市Id不存在" });
             }
-
+      
             var query = db.Stores.AsQueryable();
             query = query.Where(store => store.Address.Contains(cities.CityName));
-
+           
             var matchedStoresData = query.Select(store => new
             {
                 store.Id,
@@ -45,7 +49,10 @@ namespace JoinJoy.Controllers
                 store.HqTag,
                 store.PopTag
             }).ToList();
-
+            if (!matchedStoresData.Any()) 
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "所選地區找不到店家" });
+            }
             var matchedStores = matchedStoresData.Select(store => new
             {
                 storeId = store.Id,
@@ -66,12 +73,11 @@ namespace JoinJoy.Controllers
                 },
             }).ToList();
 
-            if (!matchedStores.Any())
-            {
-                return NotFound();
-            }
-
-            return Ok(matchedStores);
+            //if (!matchedStores.Any())
+            //{
+            //    return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "所選地區找不到店家" });
+            //}
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功",data=new { matchedStores } });
         }
 
         private double CalculateStoreScore(int storeId)
