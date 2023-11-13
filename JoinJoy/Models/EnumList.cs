@@ -10,7 +10,8 @@ namespace JoinJoy.Models
         public enum GroupState
         {
             開團中,
-            已預約
+            已預約,
+            已結束
         }
 
         public enum JoinGroupState
@@ -30,6 +31,32 @@ namespace JoinJoy.Models
 
         }
 
+        public enum CostFilter
+        {
+            below30,
+            c30to40,
+            c40to50,
+            c50up,
+            all,
+        }
+
+        public enum StoreFilter
+        {
+            relevance = 0,
+            highestRating,
+            mostReviews,
+            
+        }
+
+        public enum StoreTag
+        {
+            none,
+            wifiTag,
+            teachTag,
+            meal,
+            mealout,
+            buffet,
+        }
 
     }
 }

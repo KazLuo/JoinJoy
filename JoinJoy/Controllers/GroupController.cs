@@ -381,12 +381,11 @@ namespace JoinJoy.Controllers
             return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = $"入團申請的狀態已更新為：{status.ToString()}。" });
         }
         #endregion
-
         /// <summary>
         /// 查詢預約時段剩餘位置
         /// </summary>
         /// <param name="storeId">測試可以用"7"</param>
-        /// <param name="date">測試可以使用2023-11-01</param>
+        /// <param name="date">測試可以使用2023-11-01 ,有滿人的 2023-11-07</param>
         /// <returns></returns>
         #region"查看店家可預約時段"
         [HttpGet]
@@ -404,6 +403,7 @@ namespace JoinJoy.Controllers
             var operatingHoursList = new List<object>();
             var startTime = date.Date.Add(store.OpenTime); // 指定日期加上營業開始時間
             var endTime = date.Date.Add(store.CloseTime); // 指定日期加上營業結束時間
+
 
             // 計算每個小時段的營業時間及剩餘座位
             for (var hour = startTime; hour < endTime; hour = hour.AddHours(1))
@@ -429,7 +429,7 @@ namespace JoinJoy.Controllers
                 operatingHoursList.Add(new
                 {
                     time = $"{hour.ToString("HH:mm")}~{nextHour.ToString("HH:mm")}",
-                    seat = $"可容納人數: {remainingSeats}"
+                    seats = remainingSeats
                 });
             }
 
