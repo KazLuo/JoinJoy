@@ -439,6 +439,23 @@ namespace JoinJoy.Controllers
         /// </summary>
         /// <returns></returns>
         #region"取得會員所有揪團紀錄"
+        //[HttpGet]
+        //[JwtAuthFilter]
+        //[Route("usergrouplist")]
+        //public IHttpActionResult GetUserGroupList()
+        //{
+        //    var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+        //    int userId = (int)userToken["Id"];
+
+        //    var user = db.Members.FirstOrDefault(m => m.Id == userId);
+        //    if (user == null)
+        //    {
+        //        return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
+        //    }
+        //    var info = db.GroupParticipants.Where(gp => gp.MemberId == userId).Select(gp => new { groupId = gp.GroupId, groupName = gp.Group.GroupName, startTime = gp.Group.StartTime, endTime = gp.Group.EndTime, totalMemberNum = gp.Group.MaxParticipants, currentPeople = gp.Group.CurrentParticipants, place = string.IsNullOrEmpty(gp.Group.Address) ? (string)null : gp.Group.Address, store = new { storeId = gp.Group.StoreId, storeName = gp.Group.Store.Name, address = gp.Group.Store.Address }, status = gp.AttendanceStatus.ToString() }).ToList();
+
+        //    return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { info } });
+        //}
         [HttpGet]
         [JwtAuthFilter]
         [Route("usergrouplist")]
@@ -452,7 +469,25 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
             }
-            var info = db.GroupParticipants.Where(gp => gp.MemberId == userId).Select(gp => new { groupId = gp.GroupId, groupName = gp.Group.GroupName, startTime = gp.Group.StartTime, endTime = gp.Group.EndTime, totalMemberNum = gp.Group.MaxParticipants, currentPeople = gp.Group.CurrentParticipants, place = string.IsNullOrEmpty(gp.Group.Address) ? (string)null : gp.Group.Address, store = new { storeId = gp.Group.StoreId, storeName = gp.Group.Store.Name, address = gp.Group.Store.Address }, status = gp.AttendanceStatus.ToString() }).ToList();
+            var info = db.GroupParticipants.Where(gp => gp.MemberId == userId)
+                .Select(gp => new {
+                    groupId = gp.GroupId,
+                    groupName = gp.Group.GroupName,
+                    startTime = gp.Group.StartTime,
+                    endTime = gp.Group.EndTime,
+                    totalMemberNum = gp.Group.MaxParticipants,
+                    currentPeople = gp.Group.CurrentParticipants,
+                    place = string.IsNullOrEmpty(gp.Group.Address) ? (string)null : gp.Group.Address,
+                    store = gp.Group.StoreId == null && gp.Group.Store.Name == null && gp.Group.Store.Address == null
+                             ? null
+                             : new
+                             {
+                                 storeId = gp.Group.StoreId,
+                                 storeName = gp.Group.Store.Name,
+                                 address = gp.Group.Store.Address
+                             },
+                    status = gp.AttendanceStatus.ToString()
+                }).ToList();
 
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { info } });
         }
