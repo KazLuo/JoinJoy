@@ -469,7 +469,7 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
             }
-            var info = db.GroupParticipants.Where(gp => gp.MemberId == userId)
+            var member = db.GroupParticipants.Where(gp => gp.MemberId == userId || gp.Group.MemberId == userId)
                 .Select(gp => new {
                     groupId = gp.GroupId,
                     groupName = gp.Group.GroupName,
@@ -488,8 +488,28 @@ namespace JoinJoy.Controllers
                              },
                     status = gp.AttendanceStatus.ToString()
                 }).ToList();
+            var leader = db.Groups.Where(gp => gp.MemberId == userId)
+                .Select(gp => new {
+                    groupId = gp.GroupId,
+                    groupName = gp.GroupName,
+                    startTime = gp.StartTime,
+                    endTime = gp.EndTime,
+                    totalMemberNum = gp.MaxParticipants,
+                    currentPeople = gp.CurrentParticipants,
+                    place = string.IsNullOrEmpty(gp.Address) ? (string)null : gp.Address,
+                    store = gp.StoreId == null && gp.Store.Name == null && gp.Store.Address == null
+                             ? null
+                             : new
+                             {
+                                 storeId = gp.StoreId,
+                                 storeName = gp.Store.Name,
+                                 address = gp.Store.Address
+                             },
+                    status = gp.GroupState.ToString()
+                }).ToList();
 
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { info } });
+
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { member,leader } });
         }
         #endregion
         /// <summary>
