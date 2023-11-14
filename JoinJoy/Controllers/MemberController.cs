@@ -452,10 +452,49 @@ namespace JoinJoy.Controllers
         //    {
         //        return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
         //    }
-        //    var info = db.GroupParticipants.Where(gp => gp.MemberId == userId).Select(gp => new { groupId = gp.GroupId, groupName = gp.Group.GroupName, startTime = gp.Group.StartTime, endTime = gp.Group.EndTime, totalMemberNum = gp.Group.MaxParticipants, currentPeople = gp.Group.CurrentParticipants, place = string.IsNullOrEmpty(gp.Group.Address) ? (string)null : gp.Group.Address, store = new { storeId = gp.Group.StoreId, storeName = gp.Group.Store.Name, address = gp.Group.Store.Address }, status = gp.AttendanceStatus.ToString() }).ToList();
+        //    var member = db.GroupParticipants.Where(gp => gp.MemberId == userId || gp.Group.MemberId == userId)
+        //        .Select(gp => new {
+        //            groupId = gp.GroupId,
+        //            groupName = gp.Group.GroupName,
+        //            startTime = gp.Group.StartTime,
+        //            endTime = gp.Group.EndTime,
+        //            totalMemberNum = gp.Group.MaxParticipants,
+        //            currentPeople = gp.Group.CurrentParticipants,
+        //            place = string.IsNullOrEmpty(gp.Group.Address) ? (string)null : gp.Group.Address,
+        //            store = gp.Group.StoreId == null && gp.Group.Store.Name == null && gp.Group.Store.Address == null
+        //                     ? null
+        //                     : new
+        //                     {
+        //                         storeId = gp.Group.StoreId,
+        //                         storeName = gp.Group.Store.Name,
+        //                         address = gp.Group.Store.Address
+        //                     },
+        //            status = gp.AttendanceStatus.ToString()
+        //        }).ToList();
+        //    var leader = db.Groups.Where(gp => gp.MemberId == userId)
+        //        .Select(gp => new {
+        //            groupId = gp.GroupId,
+        //            groupName = gp.GroupName,
+        //            startTime = gp.StartTime,
+        //            endTime = gp.EndTime,
+        //            totalMemberNum = gp.MaxParticipants,
+        //            currentPeople = gp.CurrentParticipants,
+        //            place = string.IsNullOrEmpty(gp.Address) ? (string)null : gp.Address,
+        //            store = gp.StoreId == null && gp.Store.Name == null && gp.Store.Address == null
+        //                     ? null
+        //                     : new
+        //                     {
+        //                         storeId = gp.StoreId,
+        //                         storeName = gp.Store.Name,
+        //                         address = gp.Store.Address
+        //                     },
+        //            status = gp.GroupState.ToString()
+        //        }).ToList();
 
-        //    return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { info } });
+
+        //    return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { member, leader } });
         //}
+
         [HttpGet]
         [JwtAuthFilter]
         [Route("usergrouplist")]
@@ -469,47 +508,71 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
             }
-            var member = db.GroupParticipants.Where(gp => gp.MemberId == userId || gp.Group.MemberId == userId)
-                .Select(gp => new {
-                    groupId = gp.GroupId,
-                    groupName = gp.Group.GroupName,
-                    startTime = gp.Group.StartTime,
-                    endTime = gp.Group.EndTime,
-                    totalMemberNum = gp.Group.MaxParticipants,
-                    currentPeople = gp.Group.CurrentParticipants,
-                    place = string.IsNullOrEmpty(gp.Group.Address) ? (string)null : gp.Group.Address,
-                    store = gp.Group.StoreId == null && gp.Group.Store.Name == null && gp.Group.Store.Address == null
-                             ? null
-                             : new
-                             {
-                                 storeId = gp.Group.StoreId,
-                                 storeName = gp.Group.Store.Name,
-                                 address = gp.Group.Store.Address
-                             },
-                    status = gp.AttendanceStatus.ToString()
-                }).ToList();
-            var leader = db.Groups.Where(gp => gp.MemberId == userId)
-                .Select(gp => new {
-                    groupId = gp.GroupId,
-                    groupName = gp.GroupName,
-                    startTime = gp.StartTime,
-                    endTime = gp.EndTime,
-                    totalMemberNum = gp.MaxParticipants,
-                    currentPeople = gp.CurrentParticipants,
-                    place = string.IsNullOrEmpty(gp.Address) ? (string)null : gp.Address,
-                    store = gp.StoreId == null && gp.Store.Name == null && gp.Store.Address == null
-                             ? null
-                             : new
-                             {
-                                 storeId = gp.StoreId,
-                                 storeName = gp.Store.Name,
-                                 address = gp.Store.Address
-                             },
-                    status = gp.GroupState.ToString()
-                }).ToList();
 
+            var memberQuery = db.GroupParticipants.Where(gp => gp.MemberId == userId || gp.Group.MemberId == userId).ToList();
 
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { member,leader } });
+            var member = memberQuery.Select(gp => new
+            {
+                groupId = gp.GroupId,
+                groupName = gp.Group.GroupName,
+                startTime = gp.Group.StartTime,
+                endTime = gp.Group.EndTime,
+                totalMemberNum = gp.Group.MaxParticipants,
+                currentPeople = gp.Group.CurrentParticipants,
+                place = string.IsNullOrEmpty(gp.Group.Address) ? (string)null : gp.Group.Address,
+                store = (gp.Group.Store != null && gp.Group.StoreId != null)
+             ? new
+             {
+                 storeId = gp.Group.StoreId,
+                 storeName = gp.Group.Store.Name,
+                 address = gp.Group.Store.Address
+             }
+             : null,
+                status = GetUpdatedGroupStatus(gp.Group).ToString()
+            }).ToList();
+
+            var leaderQuery = db.Groups.Where(g => g.MemberId == userId).ToList();
+
+            var leader = leaderQuery.Select(g => new
+            {
+                groupId = g.GroupId,
+                groupName = g.GroupName,
+                startTime = g.StartTime,
+                endTime = g.EndTime,
+                totalMemberNum = g.MaxParticipants,
+                currentPeople = g.CurrentParticipants,
+                place = string.IsNullOrEmpty(g.Address) ? (string)null : g.Address,
+                store = (g.Store != null && g.StoreId != null)
+             ? new
+             {
+                 storeId = g.StoreId,
+                 storeName = g.Store.Name,
+                 address = g.Store.Address
+             }
+             : null,
+                status = GetUpdatedGroupStatus(g).ToString()
+            }).ToList();
+
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { member, leader } });
+        }
+
+        private string GetUpdatedGroupStatus(Group group)
+        {
+            DateTime now = DateTime.Now;
+            // 假設您有一個 EnumList.GroupState 類型，這裡是根據組的狀態和時間來計算新狀態的邏輯
+            // 您需要根據實際情況來實現這部分邏輯
+            if (group.GroupState == EnumList.GroupState.開團中 && now > group.StartTime)
+            {
+                return EnumList.GroupState.已失效.ToString();
+            }
+            else if (group.GroupState == EnumList.GroupState.已預約 && now > group.EndTime)
+            {
+                return EnumList.GroupState.已結束.ToString();
+            }
+            else
+            {
+                return group.GroupState.ToString();
+            }
         }
         #endregion
         /// <summary>
@@ -537,7 +600,7 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "被評價的會員不存在" });
             }
             //驗證會員有參加此團(包含團主)
-            var isjoin = db.GroupParticipants.Any(m => m.GroupId == viewRatingMember.groupId && m.MemberId == viewRatingMember.memberId) || db.Groups.Any(g => g.GroupId == viewRatingMember.groupId && g.MemberId == viewRatingMember.memberId); 
+            var isjoin = db.GroupParticipants.Any(m => m.GroupId == viewRatingMember.groupId && m.MemberId == viewRatingMember.memberId) || db.Groups.Any(g => g.GroupId == viewRatingMember.groupId && g.MemberId == viewRatingMember.memberId);
             if (!isjoin)
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "只有參加此團的人員能夠評價" });
@@ -555,6 +618,15 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您已經給該會員評過分" });
             }
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == viewRatingMember.groupId);
+            // 檢查團是否為已預約且已經結束
+            if (group.GroupState != EnumList.GroupState.已預約 || DateTime.Now <= group.EndTime)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有在已預約且已結束的團中才能進行評價" });
+            }
+
+
+
 
             // 創建一個新的評價記錄
             var rating = new MemberRating
@@ -605,7 +677,13 @@ namespace JoinJoy.Controllers
             var groupstatus = db.Groups.Any(g => g.GroupId == groupId && g.GroupState == EnumList.GroupState.開團中);
             if (groupstatus)
             {
-                return Ok(new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊還在開團狀態，尚無團隊評價資訊" });
+                var groupInvalid = db.Groups.Any(g => g.GroupId == groupId && g.GroupState == EnumList.GroupState.開團中 && g.StartTime <= DateTime.Now);
+                if (groupInvalid)
+                {
+                    return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "開團已過時效", });
+                }
+
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊還在開團狀態，尚無團隊評價資訊" });
             }
 
 
@@ -710,7 +788,7 @@ namespace JoinJoy.Controllers
                                            },
                                        };
                 var averageScore = ratingsWithGroup.Average(a => a.score);
-               
+
                 // 根據 sortBy 參數對結果進行排序
                 switch (sortBy)
                 {
@@ -819,7 +897,7 @@ namespace JoinJoy.Controllers
             }
 
             // 確定店家是否已經預約
-            if (!db.Groups.Any(m=>m.GroupId == viewStoreRating.groupId && m.GroupState == EnumList.GroupState.已預約))
+            if (!db.Groups.Any(m => m.GroupId == viewStoreRating.groupId && m.GroupState == EnumList.GroupState.已預約))
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "店家尚未預約無法進行評價" });
             }
@@ -829,6 +907,12 @@ namespace JoinJoy.Controllers
             if (existingRating != null)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您已經給該店家評過分" });
+            }
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == viewStoreRating.groupId);
+            // 檢查團是否為已預約且已經結束
+            if (group.GroupState != EnumList.GroupState.已預約 || DateTime.Now <= group.EndTime)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有在已預約且已結束的團中才能進行評價" });
             }
 
             // 創建一個新的評價記錄
@@ -882,12 +966,26 @@ namespace JoinJoy.Controllers
         }
         #endregion
 
+        private string CalculateGroupStatus(EnumList.GroupState groupState, DateTime startTime, DateTime endTime, DateTime now)
+        {
 
+            switch (groupState)
+            {
+                case EnumList.GroupState.開團中:
+                    return now > startTime ? EnumList.GroupState.已失效.ToString() : EnumList.GroupState.開團中.ToString();
+                case EnumList.GroupState.已預約:
+                    return now > endTime ? EnumList.GroupState.已結束.ToString() : EnumList.GroupState.已預約.ToString();
+                default:
+                    return groupState.ToString();
+            }
+        }
 
 
 
 
     }
+
+
 }
 
 

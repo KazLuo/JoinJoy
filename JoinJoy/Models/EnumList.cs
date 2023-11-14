@@ -11,7 +11,8 @@ namespace JoinJoy.Models
         {
             開團中,
             已預約,
-            已結束
+            已結束,
+            已失效,
         }
 
         public enum JoinGroupState

@@ -59,7 +59,11 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團主及同行親友不可超過上限人數" });
             }
-
+            // 是否預約到過去的時間
+            if (model.startTime < DateTime.Now)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "過去的時間是不能預約的" });
+            }
             // 檢查結束時間是否在開始時間之後
             if (model.endTime <= model.startTime)
             {
@@ -262,6 +266,10 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "該團尚未開放" });
             }
+            if(DateTime.Now>group.StartTime)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該團已逾時，無法加入" });
+            }
             if (group.GroupState != EnumList.GroupState.開團中)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該團已送出預約，下次請早!" });
@@ -353,6 +361,11 @@ namespace JoinJoy.Controllers
             if (joinRequest == null)
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "入團申請不存在" });
+            }
+            //逾時後不可審核
+            if (DateTime.Now > group.StartTime)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊已逾時，無法審核人員" });
             }
 
             // 將前端傳送的具名值轉換為對應的枚舉值
@@ -534,6 +547,11 @@ namespace JoinJoy.Controllers
                 return BadRequest(ModelState);
             }
 
+            if(DateTime.Now> group.StartTime)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊已逾時，無法進行修改" });
+            }
+
             // 更新團體的基本資訊
             group.GroupName = model.groupName;
             group.Description = model.description;
@@ -710,11 +728,31 @@ namespace JoinJoy.Controllers
 
             object gamesInfo = groupQuery.IsHomeGroup ? null : groupQuery.Games;
 
+            // 獲取當前時間
+            DateTime now = DateTime.Now;
+
+            string groupStatus;
+
+            // 判斷組的狀態並根據時間進行修改
+            switch (groupQuery.GroupState)
+            {
+                case EnumList.GroupState.開團中:
+                    groupStatus = now > groupQuery.StartTime ? EnumList.GroupState.已失效.ToString() : EnumList.GroupState.開團中.ToString();
+                    break;
+                case EnumList.GroupState.已預約:
+                    groupStatus = now > groupQuery.EndTime ? EnumList.GroupState.已結束.ToString() : EnumList.GroupState.已預約.ToString();
+                    break;
+                default:
+                    groupStatus = groupQuery.GroupState.ToString();
+                    break;
+            }
+
             // 建立最終的物件
             var groupWithGames = new
             {
                 groupName = groupQuery.GroupName,
-                groupStatus = groupQuery.GroupState.ToString().ToLower(),
+                //groupStatus = groupQuery.GroupState.ToString(),
+                groupStatus = groupStatus,
                 place = groupQuery.IsHomeGroup ? groupQuery.Address : null,
                 isPrivate = groupQuery.isPrivate,
                 store = storeInfo,
@@ -760,7 +798,7 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "用戶不是此團隊的成員。" });
             }
 
-            // 檢查團隊狀態，只有在開團中時才能退出
+            // 檢查團隊狀態，只有在開團中才能退出
             if (group.GroupState != EnumList.GroupState.開團中)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "無法退出，因為團隊目前不是開團中狀態。如果是團主請使用解散團隊" });
@@ -806,12 +844,17 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "無法預約，因為並非所有成員都已審核通過。" });
             }
 
-            // 確認團隊目前的狀態允許預約
-            if (group.GroupState != EnumList.GroupState.開團中)
-            {
-                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊狀態不允許進行預約。" });
-            }
 
+            // 確認團隊目前的狀態允許預約
+            if (group.GroupState != EnumList.GroupState.開團中 || DateTime.Now >= group.StartTime)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊狀態不允許進行預約，或已超過預約時間。" });
+            }
+            //如果是自家團
+            if (group.IsHomeGroup ==true)
+            {
+                group.GroupState = EnumList.GroupState.已預約;
+            }
             // 在此處進行預約前的座位檢查
             var startTime = group.StartTime;
             var endTime = group.EndTime;
@@ -844,7 +887,7 @@ namespace JoinJoy.Controllers
             // 更新團隊狀態為已預約
             group.GroupState = EnumList.GroupState.已預約;
 
-            //// 更新店家當前人數
+            //// 更新店家當前人數(暫時不需要，改用group表單計算current總數)
             //var store = db.Stores.FirstOrDefault(s => s.Id == group.StoreId);
             //if (store != null)
             //{
@@ -923,6 +966,8 @@ namespace JoinJoy.Controllers
             }
         }
         #endregion
+
+
 
     }
 
