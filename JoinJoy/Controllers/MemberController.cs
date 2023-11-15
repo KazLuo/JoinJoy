@@ -59,6 +59,7 @@ namespace JoinJoy.Controllers
             });
 
         }
+        #endregion
         /// <summary>
         /// 獲取會員詳細資訊(取得其他會員資訊)
         /// </summary>
@@ -89,7 +90,7 @@ namespace JoinJoy.Controllers
                 }
             });
         }
-        #endregion
+       
         #endregion
         /// <summary>
         /// 修改會員詳細資訊
@@ -509,7 +510,7 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
             }
 
-            var memberQuery = db.GroupParticipants.Where(gp => gp.MemberId == userId || gp.Group.MemberId == userId).ToList();
+            var memberQuery = db.GroupParticipants.Where(gp => gp.MemberId == userId /*|| gp.Group.MemberId == userId*/).ToList();
 
             var member = memberQuery.Select(gp => new
             {
@@ -528,7 +529,7 @@ namespace JoinJoy.Controllers
                  address = gp.Group.Store.Address
              }
              : null,
-                status = GetUpdatedGroupStatus(gp.Group).ToString()
+                status = JoinGroupStatus(gp.AttendanceStatus, gp.Group.StartTime, gp.Group.EndTime, DateTime.Now).ToString()
             }).ToList();
 
             var leaderQuery = db.Groups.Where(g => g.MemberId == userId).ToList();
@@ -574,6 +575,21 @@ namespace JoinJoy.Controllers
                 return group.GroupState.ToString();
             }
         }
+
+        private string JoinGroupStatus(EnumList.JoinGroupState joinGroupState, DateTime startTime, DateTime endTime, DateTime now)
+        {
+
+            switch (joinGroupState)
+            {
+                case EnumList.JoinGroupState.pending:
+                    return now > startTime ? EnumList.GroupState.已失效.ToString() : EnumList.JoinGroupState.pending.ToString();
+                case EnumList.JoinGroupState.member:
+                    return now > endTime ? EnumList.GroupState.已結束.ToString() : EnumList.JoinGroupState.member.ToString();
+                default:
+                    return joinGroupState.ToString();
+            }
+        }
+
         #endregion
         /// <summary>
         /// 評價會員
@@ -754,71 +770,74 @@ namespace JoinJoy.Controllers
         [Route("getrating/{userId}/{sortBy}")]
         public IHttpActionResult GetRating(int userId, EnumList.RatingFilter sortBy)
         {
-            try
+
+            var ratingsWithGroup = (from rating in db.MemberRatings
+                                    join Group in db.Groups on rating.GroupId equals Group.GroupId
+                                    join Members in db.Members on rating.MemberId equals Members.Id
+                                    where rating.RatedId == userId
+                                    select new
+                                    {
+                                        rating,
+                                        Group,
+                                        Members
+                                    }).ToList();  // 先將數據轉換為List
+
+            var comments = ratingsWithGroup.Select(r => new
             {
-                // 連結 MemberRatings 和 Groups 表
-                var ratingsWithGroup = from rating in db.MemberRatings
-                                       join Group in db.Groups on rating.GroupId equals Group.GroupId
-                                       join Members in db.Members on rating.MemberId equals Members.Id
-                                       where rating.RatedId == userId
-                                       select new
-                                       {
-
-                                           commentId = rating.Id,
-                                           msg = rating.Comment,
-                                           score = rating.Score,
-                                           commentDate = rating.RatingDate,
-                                           commentBy = new
-                                           {
-                                               userid = rating.MemberId,
-                                               userName = Members.Nickname,
-                                               userPhoto = Members.Photo,
-
-                                           },
-
-                                           groups = new
-                                           {
-                                               groupId = Group.GroupId,
-                                               groupName = Group.GroupName,
-                                               memberQtu = Group.CurrentParticipants,
-                                               groupDate = Group.StartTime,
-                                               storeName = Group.IsHomeGroup ? Group.Address : Group.Store.Name,
-                                               storeId = Group.Store.Id,
-
-                                           },
-                                       };
-                var averageScore = ratingsWithGroup.Average(a => a.score);
-
-                // 根據 sortBy 參數對結果進行排序
-                switch (sortBy)
+                commentId = r.rating.Id,
+                msg = r.rating.Comment,
+                score = r.rating.Score,
+                commentDate = r.rating.RatingDate,
+                commentBy = new
                 {
-                    case EnumList.RatingFilter.newest:
-                        ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.commentDate);
-                        break;
-                    case EnumList.RatingFilter.highest:
-                        ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.score);
-                        break;
-                    case EnumList.RatingFilter.lowest:
-                        ratingsWithGroup = ratingsWithGroup.OrderBy(r => r.score);
-                        break;
-                    default:
-                        ratingsWithGroup = ratingsWithGroup.OrderByDescending(r => r.commentDate);
-                        break;
+                    userid = r.rating.MemberId,
+                    userName = r.Members.Nickname,
+                    profileImg = BuildProfileImageUrl(r.Members.Photo)
+                },
+                groups = new
+                {
+                    groupId = r.Group.GroupId,
+                    groupName = r.Group.GroupName,
+                    memberQtu = r.Group.CurrentParticipants,
+                    groupDate = r.Group.StartTime,
+                    storeName = r.Group.IsHomeGroup ? r.Group.Address : r.Group.Store.Name,
+                    storeId = r.Group.Store.Id
                 }
+            }).AsQueryable(); // 將結果轉換回 IQueryable 以便進行後續排序
 
-                // 執行查詢並轉換為列表
-                var comments = ratingsWithGroup.ToList();
+            //var comments = ratingsWithGroup.ToList();
 
-                var allCommentCount = ratingsWithGroup.ToList().Count;
-
-                // 返回響應
-                return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", allCommentCount, comments });
-            }
-            catch
+            // 如果沒有評價，則返回空結果
+            if (!comments.Any())
             {
-                // 返回響應
-                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "回傳失敗" });
+                return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "沒有評價", allCommentCount = 0, comments = new List<object>() });
             }
+
+            double? averageScore = comments.Average(a => a.score);
+
+            // 根據 sortBy 參數對結果進行排序
+            switch (sortBy)
+            {
+                case EnumList.RatingFilter.newest:
+                    comments = comments.OrderByDescending(r => r.commentDate);
+                    break;
+                case EnumList.RatingFilter.highest:
+                    comments = comments.OrderByDescending(r => r.score);
+                    break;
+                case EnumList.RatingFilter.lowest:
+                    comments = comments.OrderBy(r => r.score);
+                    break;
+                default:
+                    comments = comments.OrderByDescending(r => r.commentDate);
+                    break;
+            }
+
+            var finalComments = comments.ToList();  // 將結果轉換為最終列表
+            var allCommentCount = finalComments.Count;
+
+            // 返回響應
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", allCommentCount, finalComments });
+
         }
         #endregion
 
@@ -966,18 +985,13 @@ namespace JoinJoy.Controllers
         }
         #endregion
 
-        private string CalculateGroupStatus(EnumList.GroupState groupState, DateTime startTime, DateTime endTime, DateTime now)
+        private string BuildProfileImageUrl(string photo)
         {
-
-            switch (groupState)
+            if (string.IsNullOrEmpty(photo))
             {
-                case EnumList.GroupState.開團中:
-                    return now > startTime ? EnumList.GroupState.已失效.ToString() : EnumList.GroupState.開團中.ToString();
-                case EnumList.GroupState.已預約:
-                    return now > endTime ? EnumList.GroupState.已結束.ToString() : EnumList.GroupState.已預約.ToString();
-                default:
-                    return groupState.ToString();
+                return null; // 或者返回一個默認的圖片路徑
             }
+            return $"http://4.224.16.99/upload/profile/{photo}";
         }
 
 

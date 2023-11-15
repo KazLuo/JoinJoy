@@ -49,13 +49,13 @@ namespace JoinJoy.Controllers
             }
 
             // 檢查最大參與者人數
-            if (model.totalMemberNum == 0 )
+            if (model.totalMemberNum == 0)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "開團最大人數不可為0" });
             }
 
             // 檢查開團者與攜帶人數是否超過totalMemberNum
-            if (1+model.initNum > model.totalMemberNum)
+            if (1 + model.initNum > model.totalMemberNum)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團主及同行親友不可超過上限人數" });
             }
@@ -90,7 +90,7 @@ namespace JoinJoy.Controllers
                 DateTime openingDateTime = dateOnly + store.OpenTime;
                 DateTime closingDateTime = dateOnly + store.CloseTime;
 
-             
+
 
                 // 檢查開團時間是否在店家營業時間內
                 if (model.startTime < openingDateTime || model.endTime > closingDateTime)
@@ -223,11 +223,11 @@ namespace JoinJoy.Controllers
                       comment => comment.MemberId, // 留言的會員ID
                       member => member.Id, // 會員表的ID
                       (comment, member) => new // 結合的結果
-              {
+                      {
                           userId = comment.MemberId,
-                          userName = member.Nickname, 
-                  userPhoto = member.Photo, // 照片路徑
-                  commentContent = comment.CommentContent,
+                          userName = member.Nickname,
+                          userPhoto = member.Photo, // 照片路徑
+                          commentContent = comment.CommentContent,
                           commentDate = comment.CommentDate
                       })
                 .ToList();
@@ -262,11 +262,16 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
             }
+
+            if (group.MemberId == memberId)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團主不能加入自己團" });
+            }
             if (group == null)
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "該團尚未開放" });
             }
-            if(DateTime.Now>group.StartTime)
+            if (DateTime.Now > group.StartTime)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該團已逾時，無法加入" });
             }
@@ -274,7 +279,7 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該團已送出預約，下次請早!" });
             }
-            if (group.CurrentParticipants + viewJoinGroup.initNum+1 > group.MaxParticipants)
+            if (group.CurrentParticipants + viewJoinGroup.initNum + 1 > group.MaxParticipants)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "已經滿團囉!" });
             }
@@ -314,14 +319,60 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
             }
 
-            var leader = db.Groups.Where(m => m.GroupId == groupId).Select(m => new { memberId = m.MemberId, userName = m.Member.Nickname, status = EnumList.JoinGroupState.leader.ToString(), initNum = m.InitMember }).ToList();
-            var member = db.GroupParticipants
-              .Where(gp => gp.GroupId == groupId)
-              .Join(db.Members,
-                    gp => gp.MemberId,
-                    mem => mem.Id,
-                    (gp, mem) => new { memberId = gp.MemberId, userName = mem.Nickname, status = gp.AttendanceStatus.ToString(), initNum = gp.InitMember })
-              .ToList();
+            var leaderData = db.Groups
+    .Where(m => m.GroupId == groupId)
+    .Select(m => new
+    {
+        m.MemberId,
+        m.Member.Nickname,
+        PhotoPath = m.Member.Photo,
+        m.InitMember
+    })
+    .ToList();  // 先將數據轉換為List，這樣就不在數據庫中處理了
+
+            // 現在在內存中處理數據
+            var leader = leaderData.Select(m => new
+            {
+                userId = m.MemberId,
+                userName = m.Nickname,
+                profileImg = BuildProfileImageUrl(m.PhotoPath),
+                status = EnumList.JoinGroupState.leader.ToString(),
+                initNum = m.InitMember+1//前端邏輯需要+1
+            }).ToList();
+
+            // 同理對於參與者數據
+            var memberData = db.GroupParticipants
+                .Where(gp => gp.GroupId == groupId)
+                .Join(db.Members,
+                      gp => gp.MemberId,
+                      mem => mem.Id,
+                      (gp, mem) => new
+                      {
+                          gp.MemberId,
+                          mem.Nickname,
+                          PhotoPath = mem.Photo,
+                          gp.AttendanceStatus,
+                          gp.InitMember//前端邏輯需要+1
+                      })
+                .ToList();  // 先將數據轉換為List
+
+            var member = memberData.Select(gp => new
+            {
+                memberId = gp.MemberId,
+                userName = gp.Nickname,
+                profileImg = BuildProfileImageUrl(gp.PhotoPath),
+                status = gp.AttendanceStatus.ToString(),
+                initNum = gp.InitMember
+            }).ToList();
+
+            //var leader = db.Groups.Where(m => m.GroupId == groupId).Select(m => new { memberId = m.MemberId, userName = m.Member.Nickname, profileImg = BuildProfileImageUrl(m.Member.Photo), status = EnumList.JoinGroupState.leader.ToString(), initNum = m.InitMember }).ToList();
+            //var member = db.GroupParticipants
+            //  .Where(gp => gp.GroupId == groupId)
+            //  .Join(db.Members,
+            //        gp => gp.MemberId,
+            //        mem => mem.Id,
+            //        (gp, mem) => new { memberId = gp.MemberId, userName = mem.Nickname, profileImg = BuildProfileImageUrl(mem.Photo), status = gp.AttendanceStatus.ToString(), initNum = gp.InitMember })
+            //  .ToList();
             // 合併leader和member的資料
             var data = leader.Concat(member).ToList();
 
@@ -547,7 +598,7 @@ namespace JoinJoy.Controllers
                 return BadRequest(ModelState);
             }
 
-            if(DateTime.Now> group.StartTime)
+            if (DateTime.Now > group.StartTime)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊已逾時，無法進行修改" });
             }
@@ -598,7 +649,7 @@ namespace JoinJoy.Controllers
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "開團資訊已更新" });
 
 
-            
+
         }
         #endregion
         /// <summary>
@@ -629,11 +680,11 @@ namespace JoinJoy.Controllers
                                   gp => gp.MemberId, // 團隊參與者的成員ID
                                   mem => mem.Id, // 成員表的ID
                                   (gp, mem) => new // 結合的結果
-                          {
+                                  {
                                       userId = gp.MemberId,
                                       userName = mem.Nickname,
                                       status = gp.AttendanceStatus.ToString(),
-                                      initNum = gp.InitMember +1//前端希望init等於加入總數所以+1本人
+                                      initNum = gp.InitMember + 1//前端希望init等於加入總數所以+1本人
                                   })
                             .ToList();
 
@@ -788,7 +839,7 @@ namespace JoinJoy.Controllers
             if (group == null)
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到該團" });
-                
+
             }
 
             // 確保用戶是團隊的成員
@@ -851,7 +902,7 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊狀態不允許進行預約，或已超過預約時間。" });
             }
             //如果是自家團
-            if (group.IsHomeGroup ==true)
+            if (group.IsHomeGroup == true)
             {
                 group.GroupState = EnumList.GroupState.已預約;
             }
@@ -953,10 +1004,10 @@ namespace JoinJoy.Controllers
         [Route("getallgroupid")]
         public IHttpActionResult GetAllGroupId()
         {
-           
+
             try
             {
-                var data = db.Groups.Select(m => new { groupId=m.GroupId,groupName=m.GroupName }).ToList();
+                var data = db.Groups.Select(m => new { groupId = m.GroupId, groupName = m.GroupName }).ToList();
                 return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data });
             }
             catch (Exception)
@@ -966,6 +1017,15 @@ namespace JoinJoy.Controllers
             }
         }
         #endregion
+
+        private string BuildProfileImageUrl(string photo)
+        {
+            if (string.IsNullOrEmpty(photo))
+            {
+                return null; // 或者返回一個默認的圖片路徑
+            }
+            return $"http://4.224.16.99/upload/profile/{photo}";
+        }
 
 
 
