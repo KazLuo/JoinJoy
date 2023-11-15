@@ -358,11 +358,11 @@ namespace JoinJoy.Controllers
 
             var member = memberData.Select(gp => new
             {
-                memberId = gp.MemberId,
+                userId = gp.MemberId,
                 userName = gp.Nickname,
                 profileImg = BuildProfileImageUrl(gp.PhotoPath),
                 status = gp.AttendanceStatus.ToString(),
-                initNum = gp.InitMember
+                initNum = gp.InitMember+1
             }).ToList();
 
             //var leader = db.Groups.Where(m => m.GroupId == groupId).Select(m => new { memberId = m.MemberId, userName = m.Member.Nickname, profileImg = BuildProfileImageUrl(m.Member.Photo), status = EnumList.JoinGroupState.leader.ToString(), initNum = m.InitMember }).ToList();
