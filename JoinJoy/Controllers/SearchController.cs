@@ -80,8 +80,8 @@ namespace JoinJoy.Controllers
                 storeId = store.Id,
                 storeName = store.Name,
                 address = store.Address,
-                profileImg = string.IsNullOrEmpty(store.ProfileImgPath) ? null : $"http://4.224.16.99/upload/store/{store.ProfileImgPath}",
-                cover = string.IsNullOrEmpty(store.CoverPhotoPath) ? null : $"http://4.224.16.99/upload/store/{store.CoverPhotoPath}",
+                profileImg = string.IsNullOrEmpty(store.ProfileImgPath) ? null : BuildStoreImageUrl( store.ProfileImgPath),
+                cover = string.IsNullOrEmpty(store.CoverPhotoPath) ? null : BuildStoreImageUrl(store.CoverPhotoPath),
                 score = CalculateStoreScore(store.Id),
                 cost = store.Price,
                 tag = new
@@ -197,8 +197,8 @@ namespace JoinJoy.Controllers
                 storeId = store.Id,
                 storeName = store.Name,
                 address = store.Address,
-                profileImg = string.IsNullOrEmpty(store.ProfileImgPath) ? null : $"http://4.224.16.99/upload/store/{store.ProfileImgPath}",
-                cover = string.IsNullOrEmpty(store.CoverPhotoPath) ? null : $"http://4.224.16.99/upload/store/{store.CoverPhotoPath}",
+                profileImg = string.IsNullOrEmpty(store.ProfileImgPath) ? null : BuildStoreImageUrl(store.ProfileImgPath),
+                cover = string.IsNullOrEmpty(store.CoverPhotoPath) ? null : BuildStoreImageUrl(store.CoverPhotoPath),
                 score = CalculateStoreScore(store.Id),
                 cost = store.Price,
                 tag = new
@@ -222,93 +222,93 @@ namespace JoinJoy.Controllers
         /// </summary>
         /// <param name="viewGroupSearch"></param>
         /// <returns></returns>
-        #region "搜尋揪團"
-        [HttpPost]
-        [Route("search/groups/")]
-        public IHttpActionResult SearchGroups(ViewGroupSearch viewGroupSearch)
-        {
+        //#region "搜尋揪團"
+        //[HttpPost]
+        //[Route("search/groups/")]
+        //public IHttpActionResult SearchGroups(ViewGroupSearch viewGroupSearch)
+        //{
 
-            var query = from Group in db.Groups
-                        join GroupParticipant in db.GroupParticipants on Group.GroupId equals GroupParticipant.GroupId
-                        join Member in db.Members on GroupParticipant.MemberId equals Member.Id
-                        select new
-                        {
-                            groupId = Group.GroupId,
-                            groupName = Group.GroupName,
-                            startTime = Group.StartTime,
-                            endTime = Group.EndTime,
-                            isHomeGroup = Group.IsHomeGroup,
-                            //groupState = Group.EndTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : Group.GroupState.ToString(),
-                            games = db.GroupGames
-                            .Where(gg => gg.GroupId == Group.GroupId)
-                            .Select(gg => gg.StoreInventory.GameDetails.Name).ToList(),
-                            address = Group.IsHomeGroup ? Group.Address : Group.Store.Name,
-                            beginnerTag = Group.Beginner,
-                            expertTag = Group.Expert,
-                            practiceTag = Group.Practice,
-                            openTag = Group.Open,
-                            tutorialTag = Group.Tutorial,
-                            casualTag = Group.Casual,
-                            competitiveTag = Group.Casual,
-                            currentpeople = Group.CurrentParticipants,
-                            totalMemberNum = Group.MaxParticipants,
-                            leader = new
-                            {
-                                memberId = Group.MemberId,
-                                memberName = Group.Member.Nickname,
-                                initNum = Group.InitMember + 1//用於前端邏輯
-                            },
-                            member = new
-                            {
-                                memberId = GroupParticipant.MemberId,
-                                memberName = Member.Nickname,
-                                initNum = GroupParticipant.InitMember + 1//用於前端邏輯
-                            }
+        //    var query = from Group in db.Groups
+        //                join GroupParticipant in db.GroupParticipants on Group.GroupId equals GroupParticipant.GroupId
+        //                join Member in db.Members on GroupParticipant.MemberId equals Member.Id
+        //                select new
+        //                {
+        //                    groupId = Group.GroupId,
+        //                    groupName = Group.GroupName,
+        //                    startTime = Group.StartTime,
+        //                    endTime = Group.EndTime,
+        //                    isHomeGroup = Group.IsHomeGroup,
+        //                    //groupState = Group.EndTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : Group.GroupState.ToString(),
+        //                    games = db.GroupGames
+        //                    .Where(gg => gg.GroupId == Group.GroupId)
+        //                    .Select(gg => gg.StoreInventory.GameDetails.Name).ToList(),
+        //                    address = Group.IsHomeGroup ? Group.Address : Group.Store.Name,
+        //                    beginnerTag = Group.Beginner,
+        //                    expertTag = Group.Expert,
+        //                    practiceTag = Group.Practice,
+        //                    openTag = Group.Open,
+        //                    tutorialTag = Group.Tutorial,
+        //                    casualTag = Group.Casual,
+        //                    competitiveTag = Group.Casual,
+        //                    currentpeople = Group.CurrentParticipants,
+        //                    totalMemberNum = Group.MaxParticipants,
+        //                    leader = new
+        //                    {
+        //                        memberId = Group.MemberId,
+        //                        memberName = Group.Member.Nickname,
+        //                        initNum = Group.InitMember + 1//用於前端邏輯
+        //                    },
+        //                    member = new
+        //                    {
+        //                        memberId = GroupParticipant.MemberId,
+        //                        memberName = Member.Nickname,
+        //                        initNum = GroupParticipant.InitMember + 1//用於前端邏輯
+        //                    }
 
-                        };
+        //                };
 
-            // 城市過濾
-            if (viewGroupSearch.cityId != null)
-            {
-                var city = db.Cities.FirstOrDefault(c => c.Id == viewGroupSearch.cityId);
-                if (city != null)
-                {
-                    query = query.Where(g => g.address.Contains(city.CityName));
-                }
-            }
+        //    // 城市過濾
+        //    if (viewGroupSearch.cityId != null)
+        //    {
+        //        var city = db.Cities.FirstOrDefault(c => c.Id == viewGroupSearch.cityId);
+        //        if (city != null)
+        //        {
+        //            query = query.Where(g => g.address.Contains(city.CityName));
+        //        }
+        //    }
 
-            // 日期篩選
-            if (viewGroupSearch.startDate.HasValue)
-            {
-                DateTime startDate = viewGroupSearch.startDate.Value;
-                query = query.Where(g => g.startTime.Year == startDate.Year
-                                         && g.startTime.Month == startDate.Month
-                                         && g.startTime.Day == startDate.Day);
-            }
-
-
-
-            // 遊戲名稱篩選，可模糊搜尋
-
-
-            if (!string.IsNullOrEmpty(viewGroupSearch.gameName))
-            {
-                query = query.Where(g => g.games.Any(game => game.Contains(viewGroupSearch.gameName)));
-            }
-
-
-            var matchedGroups = query.ToList();
-
-            if (!matchedGroups.Any())
-            {
-                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到符合條件的揪團活動" });
-            }
+        //    // 日期篩選
+        //    if (viewGroupSearch.startDate.HasValue)
+        //    {
+        //        DateTime startDate = viewGroupSearch.startDate.Value;
+        //        query = query.Where(g => g.startTime.Year == startDate.Year
+        //                                 && g.startTime.Month == startDate.Month
+        //                                 && g.startTime.Day == startDate.Day);
+        //    }
 
 
 
-            return Ok(matchedGroups);
-        }
-        #endregion
+        //    // 遊戲名稱篩選，可模糊搜尋
+
+
+        //    if (!string.IsNullOrEmpty(viewGroupSearch.gameName))
+        //    {
+        //        query = query.Where(g => g.games.Any(game => game.Contains(viewGroupSearch.gameName)));
+        //    }
+
+
+        //    var matchedGroups = query.ToList();
+
+        //    if (!matchedGroups.Any())
+        //    {
+        //        return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到符合條件的揪團活動" });
+        //    }
+
+
+
+        //    return Ok(matchedGroups);
+        //}
+        //#endregion
 
         #region"搜尋揪團2"
         [HttpPost]
@@ -405,6 +405,7 @@ namespace JoinJoy.Controllers
                         memberId = g.LeaderMemberId,
                         memberName = g.LeaderNickname,
                         initNum = g.LeaderInitMember + 1//前端邏輯需+1
+                        
                     },
                     members = db.GroupParticipants
                     .Where(gp => gp.GroupId == g.groupId)
@@ -424,88 +425,7 @@ namespace JoinJoy.Controllers
 
                 return Ok(finalGroups);
 
-                // 处理每个组，添加游戏信息
-        //        var matchedGroups = query.Select(g => new
-        //    {
-        //        groupId = g.GroupId,
-        //        groupName = g.GroupName,
-        //        startTime = g.StartTime,
-        //        endTime = g.EndTime,
-        //        isHomeGroup = g.IsHomeGroup,
-        //        groupState = g.EndTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.GroupState.ToString(),
-        //        address = g.IsHomeGroup ? g.Address : g.Store.Name,
-        //        beginnerTag = g.Beginner,
-        //        expertTag = g.Expert,
-        //        practiceTag = g.Practice,
-        //        openTag = g.Open,
-        //        tutorialTag = g.Tutorial,
-        //        casualTag = g.Casual,
-        //        competitiveTag = g.Casual,
-        //        currentpeople = g.CurrentParticipants,
-        //        totalMemberNum = g.MaxParticipants,
-        //        leader = new
-        //        {
-        //            memberId = g.MemberId,
-        //            memberName = g.Member.Nickname,
-        //            initNum = g.InitMember + 1//前端邏輯需+1
-        //        },
-        //        members = db.GroupParticipants
-        //            .Where(gp => gp.GroupId == g.GroupId)
-        //            .Select(gp => new
-        //            {
-        //                memberId = gp.MemberId,
-        //                memberName = db.Members.Where(mn=>mn.Id == gp.MemberId).Select(mn=>mn.Nickname),
-        //                initNum = gp.InitMember + 1//前端邏輯需+1
-        //            }).ToList()
-        //    }).ToList();
-
-        //    var finalGroups = matchedGroups.Select(g => new
-        //    {
-        //        groupId = g.GroupId,
-        //        groupName = g.GroupName,
-        //        startTime = g.StartTime,
-        //        endTime = g.EndTime,
-        //        isHomeGroup = g.IsHomeGroup,
-        //        groupState = g.EndTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.GroupState.ToString(),
-        //        games = g.IsHomeGroup ? new List<string>() : db.GroupGames
-        //                                                    .Where(gg => gg.GroupId == g.GroupId)
-        //                                                    .Select(gg => gg.StoreInventory.GameDetails.Name)
-        //                                                    .ToList(),
-        //        address = g.IsHomeGroup ? g.Address : g.Store.Name,
-        //        beginnerTag = g.Beginner,
-        //        expertTag = g.Expert,
-        //        practiceTag = g.Practice,
-        //        openTag = g.Open,
-        //        tutorialTag = g.Tutorial,
-        //        casualTag = g.Casual,
-        //        competitiveTag = g.Casual,
-        //        currentpeople = g.CurrentParticipants,
-        //        totalMemberNum = g.MaxParticipants,
-        //        leader = new
-        //        {
-        //            memberId = g.MemberId,
-        //            memberName = g.Member.Nickname,
-        //            initNum = g.InitMember + 1//前端邏輯需+1
-        //        },
-        //        members = db.GroupParticipants
-        //            .Where(gp => gp.GroupId == g.GroupId)
-        //            .Select(gp => new
-        //            {
-        //                memberId = gp.MemberId,
-        //                memberName = db.Members.Where(mn => mn.Id == gp.MemberId).Select(mn => mn.Nickname),
-        //                initNum = gp.InitMember + 1//前端邏輯需+1
-        //            }).ToList()
-        //    }).ToList();
-        //}).ToList();
-
-        //    if (!finalGroups.Any())
-        //    {
-        //        return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到符合條件的揪團活動" });
-        //    }
-
-        //    return Ok(finalGroups);
         }
-
 
         #endregion
 
@@ -522,7 +442,6 @@ namespace JoinJoy.Controllers
 
             return ratings.Average(s => (s.Value + s.Variety + s.Service + s.Clean) / 4.0);
         }
-
         private string BuildProfileImageUrl(string photo)
         {
             if (string.IsNullOrEmpty(photo))
@@ -530,6 +449,15 @@ namespace JoinJoy.Controllers
                 return null; // 或者返回一個默認的圖片路徑
             }
             return $"http://4.224.16.99/upload/profile/{photo}";
+        }
+
+        private string BuildStoreImageUrl(string photo)
+        {
+            if (string.IsNullOrEmpty(photo))
+            {
+                return null; // 或者返回一個默認的圖片路徑
+            }
+            return $"http://4.224.16.99/upload/store/{photo}";
         }
     }
 }

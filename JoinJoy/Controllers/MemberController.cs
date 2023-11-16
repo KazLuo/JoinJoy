@@ -85,6 +85,7 @@ namespace JoinJoy.Controllers
                 {//少一個photo
                     nickName = member.Nickname,
                     description = member.Introduce,
+                    profileImg = BuildProfileImageUrl(member.Photo),
                     games = member.GamePreferences.Select(m => m.GameType.Id),
                     cities = member.CityPreferences.Select(m => m.City.Id)
                 }
@@ -792,7 +793,7 @@ namespace JoinJoy.Controllers
                 {
                     memberId = memberId,
                     memberName = db.Members.Where(m => m.Id == memberId).Select(m => m.Nickname).FirstOrDefault(),
-                    memberPhoto = db.Members.Where(m => m.Id == memberId).Select(m => m.Photo).FirstOrDefault(),
+                    memberPhoto = BuildProfileImageUrl( db.Members.Where(m => m.Id == memberId).Select(m => m.Photo).FirstOrDefault()),
                     isRated = db.MemberRatings.Any(mr => mr.MemberId == memberId && mr.RatedId == userId && mr.GroupId == groupId), // 修改此处以包含评价者信息
                     score = db.MemberRatings.Where(mr => mr.MemberId == memberId && mr.RatedId == userId && mr.GroupId == groupId).Select(mr => mr.Score).FirstOrDefault(), // 修改此处以包含评价者信息
                     comment = db.MemberRatings.Where(mr => mr.MemberId == memberId && mr.RatedId == userId && mr.GroupId == groupId).Select(mr => mr.Comment).FirstOrDefault(), // 修改此处以包含评价者信息
@@ -919,7 +920,7 @@ namespace JoinJoy.Controllers
                 {
                     userId = m.Id,
                     nickName = m.Nickname,
-                    photo = string.IsNullOrEmpty(m.Photo) ? null : $"http://4.224.16.99/upload/profile/{m.Photo}"
+                    photo = string.IsNullOrEmpty(m.Photo) ? null : BuildProfileImageUrl(m.Photo)
                 }).ToList();
 
                 return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data });

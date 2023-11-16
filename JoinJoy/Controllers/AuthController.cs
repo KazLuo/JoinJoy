@@ -120,61 +120,11 @@ namespace JoinJoy.Controllers
         }
 
         #endregion
-        ///// <summary>
-        ///// 更改密碼
-        ///// </summary>
-        ///// <param name="viewPasswordChange">在會員詳細頁中修改密碼</param>
-        ///// <returns></returns>
-        //#region"更改密碼"
-        //[HttpPost]
-        //[JwtAuthFilter]
-        //[Route("changePaswrd")]
-        //public IHttpActionResult ChangePassword(ViewPasswordChange viewPasswordChange)
-        //{
-        //    Argon2Verify argon2Verifier = new Argon2Verify();
-        //    // 檢查格式是否正確
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "密碼和確認密碼不匹配" });
-        //    }
-        //    // 從JWT中提取用戶ID
-        //    var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
-        //    int memberId = (int)userToken["Id"];
-        //    // 使用用戶ID查找用戶
-        //    var user = db.Members.FirstOrDefault(m => m.Id == memberId);
-        //    if (user == null)
-        //    {
-        //        return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
-        //    }
-        //    // 使用存儲的鹽值驗證舊密碼
-        //    byte[] storedSalt = Convert.FromBase64String(user.PasswordSalt);
-        //    if (!argon2Verifier.VerifyPassword(password, dbsalt, hashpassword))
-        //    {
-        //        return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "舊密碼錯誤，請重新輸入" });
-        //    }
-        //    // 檢查新密碼是否與舊密碼相同
-        //    if (argon2.VerifyHash(viewPasswordChange.newPaswrd, storedSalt, Convert.FromBase64String(user.Password)))
-        //    {
-        //        return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "新密碼不能與舊密碼相同" });
-        //    }
-
-        //    // 為新密碼生成新的Hash&Salt
-        //    byte[] newSalt = argon2.CreateSalt();
-        //    byte[] newHashedPassword = argon2.HashPassword(viewPasswordChange.newPaswrd, newSalt);
-
-        //    // 更新資料庫中的密碼和Salt
-        //    user.Password = Convert.ToBase64String(newHashedPassword);
-        //    user.PasswordSalt = Convert.ToBase64String(newSalt);
-        //    db.SaveChanges();
-
-        //    return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "密碼修改成功" });
-        //}
         /// <summary>
         /// 更改密碼
         /// </summary>
-        /// <param name="viewPasswordChange">在會員詳細頁中修改密碼</param>
+        /// <param name="viewPasswordChange"></param>
         /// <returns></returns>
-        //#endregion
         #region "更改密碼"
         [HttpPost]
         [JwtAuthFilter]
@@ -247,7 +197,7 @@ namespace JoinJoy.Controllers
                     string photopath = "";
                     if (user.Photo!= null)
                     {//到時候要修改成部屬的網域IP
-                        photopath = $"http://4.224.16.99/upload/profile/{user.Photo}";
+                        photopath = BuildProfileImageUrl(user.Photo);
                     }
                     // 用戶已登入且 JWT 是有效的
                     return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "用戶已登入。",data=new {userId=userId,nickName=user.Nickname,photo= photopath } });
@@ -260,6 +210,13 @@ namespace JoinJoy.Controllers
         }
         #endregion
 
-
+        private string BuildProfileImageUrl(string photo)
+        {
+            if (string.IsNullOrEmpty(photo))
+            {
+                return null; 
+            }
+            return $"http://4.224.16.99/upload/profile/{photo}";
+        }
     }
 }

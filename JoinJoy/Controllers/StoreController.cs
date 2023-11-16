@@ -39,7 +39,15 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到店家資訊" });
             }
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳店家資訊成功", data = new { /*id = store.Id, memberId = store.MemberId,*/ storeName = store.Name, address = store.Address, phone = store.Phone, openTime = store.OpenTime, closeTime = store.CloseTime, description = store.Introduce, /*maxPeople = store.MaxPeople*/ cost = store.Price, wifiTag = store.Wifi, teachTag = store.Teach, meal = store.Meal, mealout = store.Mealout, buffet = store.Buffet, HqTag = store.HqTag, popTag = store.PopTag,  photo = string.IsNullOrEmpty(store.Photo) ? null : $"http://4.224.16.99/upload/store/{store.Photo}" } });
+            var storePhotos = db.StorePhotos
+                    .Where(sp => sp.StoreId == storeId)
+                    .Select(sp => sp.PhotoPath)
+                    .ToList(); // 获取与storeId相关的所有PhotoPath
+
+            var storePhotoUrls = storePhotos
+                                .Select(photoPath => string.IsNullOrEmpty(photoPath) ? null : BuildStoreImageUrl(photoPath))
+                                .ToList(); // 构建图片的完整URL
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳店家資訊成功", data = new { /*id = store.Id, memberId = store.MemberId,*/ storeName = store.Name, address = store.Address, phone = store.Phone, openTime = store.OpenTime, closeTime = store.CloseTime, description = store.Introduce, /*maxPeople = store.MaxPeople*/ cost = store.Price, wifiTag = store.Wifi, teachTag = store.Teach, meal = store.Meal, mealout = store.Mealout, buffet = store.Buffet, HqTag = store.HqTag, popTag = store.PopTag,  photo = string.IsNullOrEmpty(store.Photo) ? null : BuildStoreImageUrl(store.Photo),storePhoto = storePhotoUrls  } });
         }
         #endregion
 
@@ -342,7 +350,7 @@ namespace JoinJoy.Controllers
                 var data = stores.Select(m => new {
                     storeId = m.Id,
                     name = m.Name,
-                    photo = string.IsNullOrEmpty(m.Photo) ? null : $"http://4.224.16.99/upload/store/{m.Photo}"
+                    photo = string.IsNullOrEmpty(m.Photo) ? null : BuildStoreImageUrl(m.Photo)
                 }).ToList();
 
                 return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data });
@@ -364,7 +372,7 @@ namespace JoinJoy.Controllers
         [Route("getstorerating/{storeId}/{sortBy}")]
         public IHttpActionResult GetStoreRating(int storeId,EnumList.RatingFilter sortBy)
         {
-            var storeRatings = from StoreRating in db.StoreRatings
+            var storeRatingsQuery = from StoreRating in db.StoreRatings
                                join Group in db.Groups on StoreRating.GroupId equals Group.GroupId
                                join Member in db.Members on StoreRating.MemberId equals Member.Id
                                join Store in db.Stores on Group.StoreId equals Store.Id
@@ -388,6 +396,28 @@ namespace JoinJoy.Controllers
                                    commentDate = StoreRating.RatingDate
                                    
                                };
+
+            var storeRatings = storeRatingsQuery.ToList() // 執行查詢，將結果帶到記憶體中
+                     .Select(sr => new
+                     {
+                         userId = sr.userId,
+                         userName = sr.userName,
+                         userImg = BuildProfileImageUrl(sr.userImg),
+                         groupName = sr.groupName,
+                         groupDate = sr.groupDate,
+                         memberNum = sr.memberNum,
+                         storeName = sr.storeName,
+                         storeId = sr.storeId,
+                         environment = sr.environment,
+                         service = sr.service,
+                         game = sr.game,
+                         costValue = sr.costValue,
+                         commentId = sr.commentId,
+                         msg = sr.msg,
+                         commentDate = sr.commentDate
+
+                     })
+                     .ToList();
             if (!db.Stores.Any(s=>s.Id == storeId))
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "店家不存在。" });
@@ -471,7 +501,23 @@ namespace JoinJoy.Controllers
             });
         }
         #endregion
+        private string BuildStoreImageUrl(string photo)
+        {
+            if (string.IsNullOrEmpty(photo))
+            {
+                return null; // 或者返回一個默認的圖片路徑
+            }
+            return $"http://4.224.16.99/upload/store/{photo}";
+        }
 
+        private string BuildProfileImageUrl(string photo)
+        {
+            if (string.IsNullOrEmpty(photo))
+            {
+                return null; // 或者返回一個默認的圖片路徑
+            }
+            return $"http://4.224.16.99/upload/profile/{photo}";
+        }
 
     }
 
