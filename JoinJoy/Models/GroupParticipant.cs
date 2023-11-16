@@ -32,5 +32,7 @@ namespace JoinJoy.Models
         //public virtual ICollection<Member> Members { get; set; }
         [JsonIgnore]
         public virtual Group Group { get; set; }
+        [Display(Name = "是否報到")]
+        public bool IsPresent { get; set; } = false;
     }
 }

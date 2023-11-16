@@ -511,7 +511,7 @@ namespace JoinJoy.Controllers
             }
 
             var memberQuery = db.GroupParticipants.Where(gp => gp.MemberId == userId /*|| gp.Group.MemberId == userId*/).ToList();
-
+            
             var member = memberQuery.Select(gp => new
             {
                 groupId = gp.GroupId,
@@ -529,7 +529,9 @@ namespace JoinJoy.Controllers
                  address = gp.Group.Store.Address
              }
              : null,
-                status = JoinGroupStatus(gp.AttendanceStatus, gp.Group.StartTime, gp.Group.EndTime, DateTime.Now).ToString()
+                //memberStatus = JoinGroupStatus(gp.AttendanceStatus, gp.Group, /*gp.Group.StartTime, gp.Group.EndTime*/ DateTime.Now).ToString(),
+                memberStatus = gp.AttendanceStatus.ToString(),
+                groupStatus = GetUpdatedGroupStatus(gp.Group).ToString()
             }).ToList();
 
             var leaderQuery = db.Groups.Where(g => g.MemberId == userId).ToList();
@@ -551,7 +553,9 @@ namespace JoinJoy.Controllers
                  address = g.Store.Address
              }
              : null,
-                status = GetUpdatedGroupStatus(g).ToString()
+                memberStatus = "leader",  // 假設所有leaderQuery的結果都是領導者
+                groupStatus = GetUpdatedGroupStatus(g).ToString()
+                
             }).ToList();
 
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功!", data = new { member, leader } });
@@ -560,8 +564,6 @@ namespace JoinJoy.Controllers
         private string GetUpdatedGroupStatus(Group group)
         {
             DateTime now = DateTime.Now;
-            // 假設您有一個 EnumList.GroupState 類型，這裡是根據組的狀態和時間來計算新狀態的邏輯
-            // 您需要根據實際情況來實現這部分邏輯
             if (group.GroupState == EnumList.GroupState.開團中 && now > group.StartTime)
             {
                 return EnumList.GroupState.已失效.ToString();
@@ -576,19 +578,54 @@ namespace JoinJoy.Controllers
             }
         }
 
-        private string JoinGroupStatus(EnumList.JoinGroupState joinGroupState, DateTime startTime, DateTime endTime, DateTime now)
+        //private string JoinGroupStatus(EnumList.JoinGroupState joinGroupState, DateTime startTime, DateTime endTime, DateTime now)
+        //{
+
+        //    switch (joinGroupState)
+        //    {
+        //        case EnumList.JoinGroupState.pending:
+        //            return now > startTime ? EnumList.GroupState.已失效.ToString() : EnumList.JoinGroupState.pending.ToString();
+        //        case EnumList.JoinGroupState.member:
+        //            return now > endTime ? EnumList.GroupState.已結束.ToString() : EnumList.JoinGroupState.member.ToString();
+        //        default:
+        //            return joinGroupState.ToString();
+        //    }
+        //}
+
+        private string JoinGroupStatus(EnumList.JoinGroupState joinGroupState, Group group, DateTime now)
         {
+            // 判断当前时间与团队的时间范围关系
+            bool isBeforeStart = now < group.StartTime;
+            bool isAfterEnd = now > group.EndTime;
 
             switch (joinGroupState)
             {
                 case EnumList.JoinGroupState.pending:
-                    return now > startTime ? EnumList.GroupState.已失效.ToString() : EnumList.JoinGroupState.pending.ToString();
+                    // 对于 pending 状态，在开始时间之前保持为 pending，之后变为已失效
+                    return isBeforeStart ? EnumList.JoinGroupState.pending.ToString() : EnumList.GroupState.已失效.ToString();
+
                 case EnumList.JoinGroupState.member:
-                    return now > endTime ? EnumList.GroupState.已結束.ToString() : EnumList.JoinGroupState.member.ToString();
+                    // 对于成员，根据时间和团队的 GroupState 判断
+                    if (isBeforeStart)
+                    {
+                        return group.GroupState == EnumList.GroupState.已預約 ? EnumList.GroupState.已預約.ToString() : EnumList.JoinGroupState.member.ToString();
+                    }
+                    else if (isAfterEnd)
+                    {
+                        // 如果结束时间已过，根据 GroupState 判断是已結束还是已失效
+                        return group.GroupState == EnumList.GroupState.已預約 ? EnumList.GroupState.已結束.ToString() : EnumList.GroupState.已失效.ToString();
+                    }
+                    else
+                    {
+                        return EnumList.JoinGroupState.member.ToString();
+                    }
+
                 default:
+                    // 其他状态不变
                     return joinGroupState.ToString();
             }
         }
+
 
         #endregion
         /// <summary>

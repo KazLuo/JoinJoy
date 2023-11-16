@@ -1018,6 +1018,43 @@ namespace JoinJoy.Controllers
         }
         #endregion
 
+        #region"點名系統"
+        //[HttpPost]
+        //[JwtAuthFilter]
+        //[Route("rollcall")]
+        //public IHttpActionResult RollCall(int groupId, Dictionary<int, bool> attendance)
+        //{
+        //    var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+        //    int currentUserId = (int)userToken["Id"];// 獲取當前登錄用戶的ID
+        //    var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
+        //    if (group == null)
+        //    {
+        //        return NotFound(); // 團隊不存在
+        //    }
+
+        //    // 確認是否由團主操作
+        //    if (group.MemberId != currentUserId)
+        //    {
+        //        return Unauthorized();
+        //    }
+
+        //    var updatedParticipants = new List<int>();
+        //    foreach (var participant in group.Participants)
+        //    {
+        //        if (attendance.ContainsKey(participant.MemberId))
+        //        {
+        //            participant.IsPresent = attendance[participant.MemberId];
+        //            updatedParticipants.Add(participant.MemberId);
+        //        }
+        //    }
+
+        //    db.SaveChanges();
+
+        //    return Ok(new { Message = "點名完成", UpdatedParticipants = updatedParticipants });
+        //}
+
+
+        #endregion
         private string BuildProfileImageUrl(string photo)
         {
             if (string.IsNullOrEmpty(photo))

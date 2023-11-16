@@ -257,6 +257,10 @@
     <Compile Include="Migrations\202311120901329_add cover.Designer.cs">
       <DependentUpon>202311120901329_add cover.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202311151540422_add Ispresent.cs" />
+    <Compile Include="Migrations\202311151540422_add Ispresent.Designer.cs">
+      <DependentUpon>202311151540422_add Ispresent.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
     <Compile Include="Models\Context.cs" />
@@ -389,6 +393,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202311120901329_add cover.resx">
       <DependentUpon>202311120901329_add cover.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202311151540422_add Ispresent.resx">
+      <DependentUpon>202311151540422_add Ispresent.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
