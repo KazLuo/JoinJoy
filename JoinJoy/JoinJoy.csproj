@@ -292,6 +292,7 @@
     <Compile Include="Models\ViewModels\ViewRatingMember.cs" />
     <Compile Include="Models\ViewModels\ViewRegister.cs" />
     <Compile Include="Models\ViewModels\ViewReviewGroup.cs" />
+    <Compile Include="Models\ViewModels\ViewRollcall.cs" />
     <Compile Include="Models\ViewModels\ViewStoreRating.cs" />
     <Compile Include="Models\ViewModels\ViewStoreSearch.cs" />
     <Compile Include="Models\ViewModels\ViewUdtMemberDetail.cs" />

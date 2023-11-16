@@ -262,15 +262,16 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不存在" });
             }
+            if (group == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "該團尚未開放" });
+            }
 
             if (group.MemberId == memberId)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團主不能加入自己團" });
             }
-            if (group == null)
-            {
-                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "該團尚未開放" });
-            }
+           
             if (DateTime.Now > group.StartTime)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該團已逾時，無法加入" });
@@ -1013,45 +1014,46 @@ namespace JoinJoy.Controllers
             catch (Exception)
             {
 
-                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = true, message = "回傳失敗" });
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "回傳失敗" });
             }
         }
         #endregion
 
-        #region"點名系統"
-        //[HttpPost]
-        //[JwtAuthFilter]
-        //[Route("rollcall")]
-        //public IHttpActionResult RollCall(int groupId, Dictionary<int, bool> attendance)
-        //{
-        //    var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
-        //    int currentUserId = (int)userToken["Id"];// 獲取當前登錄用戶的ID
-        //    var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
-        //    if (group == null)
-        //    {
-        //        return NotFound(); // 團隊不存在
-        //    }
+        #region "點名系統"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("rollcall")]
+        public IHttpActionResult RollCall(int groupId, ViewRollcall viewRollcall)
+        {
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int currentUserId = (int)userToken["Id"]; // 獲取當前登錄用戶的ID
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
+            if (group == null)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團隊不存在" }); // 團隊不存在
+            }
 
-        //    // 確認是否由團主操作
-        //    if (group.MemberId != currentUserId)
-        //    {
-        //        return Unauthorized();
-        //    }
+            // 確認是否由團主操作
+            if (group.MemberId != currentUserId)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "不是團主無法點名" });
+            }
 
-        //    var updatedParticipants = new List<int>();
-        //    foreach (var participant in group.Participants)
-        //    {
-        //        if (attendance.ContainsKey(participant.MemberId))
-        //        {
-        //            participant.IsPresent = attendance[participant.MemberId];
-        //            updatedParticipants.Add(participant.MemberId);
-        //        }
-        //    }
+            // 查找對應的 GroupParticipant 實體
+            var participant = db.GroupParticipants.FirstOrDefault(gp => gp.GroupId == groupId && gp.MemberId == viewRollcall.memberId);
 
-        //    db.SaveChanges();
+            if (participant == null)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "找不到對應的參與者" }); // 如果找不到對應的參與者
+            }
 
-        //    return Ok(new { Message = "點名完成", UpdatedParticipants = updatedParticipants });
-        //}
+            // 更新出席狀態
+            participant.IsPresent = viewRollcall.isPresent;
+
+            db.SaveChanges();
+
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "點名成功", isPresent= participant.IsPresent });
+        }
 
 
         #endregion

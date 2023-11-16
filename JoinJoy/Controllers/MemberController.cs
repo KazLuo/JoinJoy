@@ -659,6 +659,15 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "只有參加此團的人員能夠評價" });
             }
 
+            // 檢查是否參加並出席了團隊活動
+            //var participant = db.GroupParticipants.FirstOrDefault(gp => gp.GroupId == viewRatingMember.groupId && gp.MemberId == userId );
+            //if (participant == null || !participant.IsPresent)
+            //{
+            //    return Content(HttpStatusCode.BadRequest, new { message = "只有參加並出席活動的成員才能進行評價" });
+            //}
+
+          
+
             // 確保用戶不是在評價自己
             if (userId == viewRatingMember.memberId)
             {
@@ -666,7 +675,7 @@ namespace JoinJoy.Controllers
             }
 
             // 檢查用戶是否已經給這個會員評過分
-            var existingRating = db.MemberRatings.FirstOrDefault(r => r.RatedId == viewRatingMember.memberId && r.MemberId == userId);
+            var existingRating = db.MemberRatings.FirstOrDefault(r => r.RatedId == viewRatingMember.memberId && r.MemberId == userId && r.GroupId == viewRatingMember.groupId);
             if (existingRating != null)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "您已經給該會員評過分" });
@@ -676,6 +685,17 @@ namespace JoinJoy.Controllers
             if (group.GroupState != EnumList.GroupState.已預約 || DateTime.Now <= group.EndTime)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有在已預約且已結束的團中才能進行評價" });
+            }
+
+            // 檢查是否為團主或參加並出席了團隊活動
+         
+            if (group.MemberId != userId) // 如果評價者不是團主
+            {
+                var participant = db.GroupParticipants.FirstOrDefault(gp => gp.GroupId == viewRatingMember.groupId && gp.MemberId == userId);
+                if (participant == null || !participant.IsPresent)
+                {
+                    return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有參加並出席活動的成員才能進行評價" });
+                }
             }
 
 
@@ -744,8 +764,8 @@ namespace JoinJoy.Controllers
 
             // 獲取團隊成員，但排除登入者本人
             var groupMembers = db.GroupParticipants
-                                 .Where(gp => gp.GroupId == groupId && gp.MemberId != userId)
-                                 .Select(gp => gp.MemberId)
+                                 .Where(gp => gp.GroupId == groupId && gp.MemberId != userId && gp.IsPresent==true)
+                                 .Select(gp => gp.MemberId )
                                  .ToList();
 
             // 添加團主的MemberId，如果團主不在GroupParticipants中且團主不是登入者
@@ -771,11 +791,11 @@ namespace JoinJoy.Controllers
                 new
                 {
                     memberId = memberId,
-                    memberName = db.Members.Where(m => m.Id == memberId).Select(m => m.Nickname).FirstOrDefault(), // 取得會員名稱
-                    memberPhoto = db.Members.Where(m => m.Id == memberId).Select(m => m.Photo).FirstOrDefault(), // 取得會員照片路徑
-                    isRated = db.MemberRatings.Any(mr => mr.RatedId == memberId && mr.GroupId == groupId),
-                    score = db.MemberRatings.Where(mr => mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Score).FirstOrDefault(),
-                    comment = db.MemberRatings.Where(mr => mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Comment).FirstOrDefault(),
+                    memberName = db.Members.Where(m => m.Id == memberId).Select(m => m.Nickname).FirstOrDefault(),
+                    memberPhoto = db.Members.Where(m => m.Id == memberId).Select(m => m.Photo).FirstOrDefault(),
+                    isRated = db.MemberRatings.Any(mr => mr.MemberId == memberId && mr.RatedId == userId && mr.GroupId == groupId), // 修改此处以包含评价者信息
+                    score = db.MemberRatings.Where(mr => mr.MemberId == memberId && mr.RatedId == userId && mr.GroupId == groupId).Select(mr => mr.Score).FirstOrDefault(), // 修改此处以包含评价者信息
+                    comment = db.MemberRatings.Where(mr => mr.MemberId == memberId && mr.RatedId == userId && mr.GroupId == groupId).Select(mr => mr.Comment).FirstOrDefault(), // 修改此处以包含评价者信息
                 }).ToList();
 
             // 檢查是否所有成員都已被評價（包括團主）
@@ -785,7 +805,7 @@ namespace JoinJoy.Controllers
             {
                 statusCode = HttpStatusCode.OK,
                 status = true,
-                message = "評價成功",
+                message = "取得評價狀態成功",
                 data = new
                 {
                     isAllRated = isAllRated,
@@ -946,6 +966,13 @@ namespace JoinJoy.Controllers
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "只有參加此團的人員或團主能夠評價" });
             }
 
+            // 檢查是否參加並出席了團隊活動
+            var participant = db.GroupParticipants.FirstOrDefault(gp => gp.GroupId == viewStoreRating.groupId && gp.MemberId == userId);
+            if (participant == null || !participant.IsPresent)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有參加並出席活動的成員才能進行評價" });
+            }
+
             // 確保用戶不是在評價自己店家
             if (db.Stores.Any(m => m.MemberId == userId))
             {
@@ -970,6 +997,8 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "只有在已預約且已結束的團中才能進行評價" });
             }
+
+
 
             // 創建一個新的評價記錄
             var Storerating = new StoreRating
