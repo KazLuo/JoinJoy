@@ -225,8 +225,8 @@ namespace JoinJoy.Controllers
             member => member.Id,
             (comment, member) => new
             {
-              Member = member,
-              Comment = comment
+                Member = member,
+                Comment = comment
             })
             .ToList() // 執行查詢，將結果帶到記憶體中
             .Select(x => new
@@ -675,37 +675,49 @@ namespace JoinJoy.Controllers
 
             // 獲取該團隊所有成員的詳細信息，包括團主
             var membersDetails = db.GroupParticipants
-                            .Where(gp => gp.GroupId == groupId)
-                            .Join(db.Members, // 加入成員表
-                                  gp => gp.MemberId, // 團隊參與者的成員ID
-                                  mem => mem.Id, // 成員表的ID
-                                  (gp, mem) => new // 結合的結果
-                                  {
-                                      userId = gp.MemberId,
-                                      userName = mem.Nickname,
-                                      status = gp.AttendanceStatus.ToString(),
-                                      initNum = gp.InitMember + 1//前端希望init等於加入總數所以+1本人
-                                  })
-                            .ToList();
+                .Where(gp => gp.GroupId == groupId)
+                .Join(db.Members,
+                      gp => gp.MemberId,
+                      mem => mem.Id,
+                      (gp, mem) => new
+                      {
+                          gp.MemberId,
+                          mem.Nickname,
+                          gp.AttendanceStatus,
+                          gp.InitMember,
+                          mem.Photo
+                      })
+                .ToList();
+
+            var membersdata = membersDetails.Select(jr => new
+            {
+                userId = jr.MemberId,
+                userName = jr.Nickname,
+                status = jr.AttendanceStatus.ToString(),
+                initNum = jr.InitMember + 1, // 加1
+                profileImg = BuildProfileImageUrl(jr.Photo) // 假设这是构建图片 URL 的方法
+            }).ToList();
 
             // 添加團主的詳細信息
-            if (!membersDetails.Any(m => m.userId == leaderId)) // 如果團主不在成員列表中
+            if (!membersDetails.Any(m => m.MemberId == leaderId)) // 如果團主不在成員列表中
             {
                 var leaderDetails = db.Members
                     .Where(m => m.Id == leaderId)
-                    .Select(m => new
-                    {
-                        userId = m.Id,
-                        userName = m.Nickname,
-                        status = EnumList.JoinGroupState.leader.ToString(), // 或其他適合您需求的狀態
-                        initNum = group.InitMember + 1 //前端希望init等於加入總數所以+1本人
-                    })
                     .FirstOrDefault();
 
-                if (leaderDetails != null)
+                var leaderdata = new
+                {
+                    userId = leaderDetails.Id,
+                    userName = leaderDetails.Nickname,
+                    status = EnumList.JoinGroupState.leader.ToString(), // 或其他適合您需求的狀態
+                    initNum = group.InitMember + 1, //前端希望init等於加入總數所以+1本人
+                    profileImg = BuildProfileImageUrl(leaderDetails.Photo)
+                };
+
+                if (leaderdata != null)
                 {
                     // 將團主插入到列表的第一位
-                    membersDetails.Insert(0, leaderDetails);
+                    membersdata.Insert(0, leaderdata);
                 }
             }
 
@@ -809,7 +821,7 @@ namespace JoinJoy.Controllers
                 totalMemberNum = groupQuery.MaxParticipants,
                 games = gamesInfo,
                 description = groupQuery.Description,
-                members = membersDetails,
+                members = membersdata,
                 tags = tags // 使用處理後的標籤列表
             };
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { groupWithGames } });

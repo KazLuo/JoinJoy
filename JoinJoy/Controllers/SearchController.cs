@@ -80,7 +80,7 @@ namespace JoinJoy.Controllers
                 storeId = store.Id,
                 storeName = store.Name,
                 address = store.Address,
-                profileImg = string.IsNullOrEmpty(store.ProfileImgPath) ? null : BuildStoreImageUrl( store.ProfileImgPath),
+                profileImg = string.IsNullOrEmpty(store.ProfileImgPath) ? null : BuildStoreImageUrl(store.ProfileImgPath),
                 cover = string.IsNullOrEmpty(store.CoverPhotoPath) ? null : BuildStoreImageUrl(store.CoverPhotoPath),
                 score = CalculateStoreScore(store.Id),
                 cost = store.Price,
@@ -220,210 +220,205 @@ namespace JoinJoy.Controllers
         /// <summary>
         /// 搜尋揪團
         /// </summary>
-        /// <param name="viewGroupSearch"></param>
+        /// <param name="viewGroupSearch.groupFilter">篩選(0=最相關 1=即將開團 2=最新開團)</param>
+        /// <param name="viewGroupSearch.groupTag">遊戲面向(0=beginner 1=expert 2=practice 3=open 4=tutorial 5=casual 6=competitive)</param>
+        /// <param name="viewGroupSearch.groupppl">揪團總人數(0=all 1=twotofour 2=fivetoseven 3=eightmore)</param>
+        /// <param name="viewGroupSearch.joinppl">可加入人數(0=all 1=onetothree 2=fourtosix 3=sevenmore)</param>
         /// <returns></returns>
-        //#region "搜尋揪團"
-        //[HttpPost]
-        //[Route("search/groups/")]
-        //public IHttpActionResult SearchGroups(ViewGroupSearch viewGroupSearch)
-        //{
-
-        //    var query = from Group in db.Groups
-        //                join GroupParticipant in db.GroupParticipants on Group.GroupId equals GroupParticipant.GroupId
-        //                join Member in db.Members on GroupParticipant.MemberId equals Member.Id
-        //                select new
-        //                {
-        //                    groupId = Group.GroupId,
-        //                    groupName = Group.GroupName,
-        //                    startTime = Group.StartTime,
-        //                    endTime = Group.EndTime,
-        //                    isHomeGroup = Group.IsHomeGroup,
-        //                    //groupState = Group.EndTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : Group.GroupState.ToString(),
-        //                    games = db.GroupGames
-        //                    .Where(gg => gg.GroupId == Group.GroupId)
-        //                    .Select(gg => gg.StoreInventory.GameDetails.Name).ToList(),
-        //                    address = Group.IsHomeGroup ? Group.Address : Group.Store.Name,
-        //                    beginnerTag = Group.Beginner,
-        //                    expertTag = Group.Expert,
-        //                    practiceTag = Group.Practice,
-        //                    openTag = Group.Open,
-        //                    tutorialTag = Group.Tutorial,
-        //                    casualTag = Group.Casual,
-        //                    competitiveTag = Group.Casual,
-        //                    currentpeople = Group.CurrentParticipants,
-        //                    totalMemberNum = Group.MaxParticipants,
-        //                    leader = new
-        //                    {
-        //                        memberId = Group.MemberId,
-        //                        memberName = Group.Member.Nickname,
-        //                        initNum = Group.InitMember + 1//用於前端邏輯
-        //                    },
-        //                    member = new
-        //                    {
-        //                        memberId = GroupParticipant.MemberId,
-        //                        memberName = Member.Nickname,
-        //                        initNum = GroupParticipant.InitMember + 1//用於前端邏輯
-        //                    }
-
-        //                };
-
-        //    // 城市過濾
-        //    if (viewGroupSearch.cityId != null)
-        //    {
-        //        var city = db.Cities.FirstOrDefault(c => c.Id == viewGroupSearch.cityId);
-        //        if (city != null)
-        //        {
-        //            query = query.Where(g => g.address.Contains(city.CityName));
-        //        }
-        //    }
-
-        //    // 日期篩選
-        //    if (viewGroupSearch.startDate.HasValue)
-        //    {
-        //        DateTime startDate = viewGroupSearch.startDate.Value;
-        //        query = query.Where(g => g.startTime.Year == startDate.Year
-        //                                 && g.startTime.Month == startDate.Month
-        //                                 && g.startTime.Day == startDate.Day);
-        //    }
-
-
-
-        //    // 遊戲名稱篩選，可模糊搜尋
-
-
-        //    if (!string.IsNullOrEmpty(viewGroupSearch.gameName))
-        //    {
-        //        query = query.Where(g => g.games.Any(game => game.Contains(viewGroupSearch.gameName)));
-        //    }
-
-
-        //    var matchedGroups = query.ToList();
-
-        //    if (!matchedGroups.Any())
-        //    {
-        //        return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到符合條件的揪團活動" });
-        //    }
-
-
-
-        //    return Ok(matchedGroups);
-        //}
-        //#endregion
-
-        #region"搜尋揪團2"
+        #region"搜尋揪團"
         [HttpPost]
-        [Route("search/groups2/")]
+        [Route("search/groups/")]
         public IHttpActionResult SearchGroups2(ViewGroupSearch viewGroupSearch)
         {
+
+            var query = db.Groups.AsQueryable();
+
+            // 篩選城市
+            if (viewGroupSearch.cityId.HasValue)
+            {
+                var city = db.Cities.FirstOrDefault(c => c.Id == viewGroupSearch.cityId);
+                if (city != null)
+                {
+                    query = query.Where(g => g.Address.Contains(city.CityName) || (g.IsHomeGroup == false && g.Store.Address.Contains(city.CityName)));
+                }
+            }
+
+            // 篩選日期
+            if (viewGroupSearch.startDate.HasValue)
+            {
+                var startDate = viewGroupSearch.startDate.Value.Date;
+                var endDate = startDate.AddDays(1);
+
+                query = query.Where(g => g.StartTime >= startDate && g.StartTime < endDate);
+            }
+
+            // 篩選遊戲名稱
+            if (!string.IsNullOrEmpty(viewGroupSearch.gameName))
+            {
+                query = query.Where(g => g.GroupGames.Any(game => game.StoreInventory.GameDetails.Name.Contains(viewGroupSearch.gameName)));
+            }
+
+            //篩選關聯性
+
+            switch (viewGroupSearch.groupFilter)
+            {
+                case EnumList.GroupFilter.relevance:
+                    break;
+                case EnumList.GroupFilter.Upcoming:
+                    query = query.OrderBy(g => g.StartTime); 
+                    break;
+                case EnumList.GroupFilter.Newest:
+                    query = query.OrderByDescending(g => g.CreationDate); 
+                    break;
+            }
+            //篩選揪團總人數
+            switch (viewGroupSearch.groupppl)
+            {
+                case EnumList.Groupppl.all:
+                    break;
+                case EnumList.Groupppl.twotofour:
+                    query = query.Where(g => g.MaxParticipants>=2 && g.MaxParticipants<= 4).OrderBy(m=>m.MaxParticipants); 
+                    break;
+                case EnumList.Groupppl.fivetoseven:
+                    query = query.Where(g => g.MaxParticipants >= 5 && g.MaxParticipants <= 7).OrderBy(m => m.MaxParticipants);
+                    break;
+                case EnumList.Groupppl.eightmore:
+                    query = query.Where(g => g.MaxParticipants >=8 ).OrderBy(m => m.MaxParticipants);
+                    break;
+
+            }
+
+            //篩選可加入人數
+            switch (viewGroupSearch.joinppl)
+            {
+                case EnumList.Joinppl.all:
+                    break;
+                case EnumList.Joinppl.onetothree:
+                    query = query.Where(g => (g.MaxParticipants-g.CurrentParticipants) >=1 && (g.MaxParticipants - g.CurrentParticipants) <= 3).OrderBy(g=>(g.MaxParticipants - g.CurrentParticipants));
+                    break;
+                case EnumList.Joinppl.fourtosix:
+                    query = query.Where(g => (g.MaxParticipants - g.CurrentParticipants) >= 4 && (g.MaxParticipants - g.CurrentParticipants) <= 6).OrderBy(g => (g.MaxParticipants - g.CurrentParticipants));
+                    break;
+                case EnumList.Joinppl.sevenmore:
+                    query = query.Where(g => (g.MaxParticipants - g.CurrentParticipants) >= 7).OrderBy(g => (g.MaxParticipants - g.CurrentParticipants));
+                    break;
+
+            }
+
+            //篩選可加入人數
+            switch (viewGroupSearch.groupTag)
+            {
+               
+                case EnumList.GroupTag.beginner:
+                    query = query.Where(g => g.Beginner);
+                    break;
+                case EnumList.GroupTag.expert:
+                    query = query.Where(g => g.Expert);
+                    break;
+                case EnumList.GroupTag.practice:
+                    query = query.Where(g => g.Practice);
+                    break;
+                case EnumList.GroupTag.open:
+                    break;
+                case EnumList.GroupTag.tutorial:
+                    query = query.Where(g => g.Tutorial);
+                    break;
+                case EnumList.GroupTag.casual:
+                    query = query.Where(g => g.Casual);
+                    break;
+                case EnumList.GroupTag.competitive:
+                    query = query.Where(g => g.Competitive);
+                    break;
+
+            }
+
            
-                var query = db.Groups.AsQueryable();
 
-                // 篩選城市
-                if (viewGroupSearch.cityId.HasValue)
-                {
-                    var city = db.Cities.FirstOrDefault(c => c.Id == viewGroupSearch.cityId);
-                    if (city != null)
-                    {
-                        query = query.Where(g => g.Address.Contains(city.CityName) || (g.IsHomeGroup == false && g.Store.Address.Contains(city.CityName)));
-                    }
-                }
 
-                // 篩選日期
-                if (viewGroupSearch.startDate.HasValue)
-                {
-                    var startDate = viewGroupSearch.startDate.Value.Date;
-                    var endDate = startDate.AddDays(1);
+            // 選取匹配群組
+            var matchedGroups = query.Select(g => new
+            {
 
-                    query = query.Where(g => g.StartTime >= startDate && g.StartTime < endDate);
-                }
 
-                // 篩選遊戲名稱
-                if (!string.IsNullOrEmpty(viewGroupSearch.gameName))
-                {
-                    query = query.Where(g => g.GroupGames.Any(game => game.StoreInventory.GameDetails.Name.Contains(viewGroupSearch.gameName)));
-                }
-
-                // 選取匹配群組
-                var matchedGroups = query.Select(g => new
-                {
-              
-
-                     groupId = g.GroupId,
-                    groupName = g.GroupName,
-                    startTime = g.StartTime,
-                    endTime = g.EndTime,
-                    isHomeGroup = g.IsHomeGroup,
-                    groupState = g.EndTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.GroupState.ToString(),
-                    address = g.IsHomeGroup ? g.Address : g.Store.Name,
-                    beginnerTag = g.Beginner,
-                    expertTag = g.Expert,
-                    practiceTag = g.Practice,
-                    openTag = g.Open,
-                    tutorialTag = g.Tutorial,
-                    casualTag = g.Casual,
-                    competitiveTag = g.Casual,
-                    currentpeople = g.CurrentParticipants,
-                    totalMemberNum = g.MaxParticipants,
-                    LeaderMemberId = g.MemberId,
-                    LeaderNickname = g.Member.Nickname,
-                    LeaderInitMember = g.InitMember,
-                    members = db.GroupParticipants
+                groupId = g.GroupId,
+                groupName = g.GroupName,
+                startTime = g.StartTime,
+                endTime = g.EndTime,
+                isHomeGroup = g.IsHomeGroup,
+                groupState = g.EndTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.GroupState.ToString(),
+                address = g.IsHomeGroup ? g.Address : g.Store.Name,
+                beginnerTag = g.Beginner,
+                expertTag = g.Expert,
+                practiceTag = g.Practice,
+                openTag = g.Open,
+                tutorialTag = g.Tutorial,
+                casualTag = g.Casual,
+                competitiveTag = g.Casual,
+                currentpeople = g.CurrentParticipants,
+                totalMemberNum = g.MaxParticipants,
+                LeaderMemberId = g.MemberId,
+                LeaderNickname = g.Member.Nickname,
+                LeaderInitMember = g.InitMember,
+                LeaderProfileImg = g.Member.Photo,
+                members = db.GroupParticipants
                     .Where(gp => gp.GroupId == g.GroupId)
                     .Select(gp => new
                     {
                         memberId = gp.MemberId,
-                        memberName = db.Members.Where(mn => mn.Id == gp.MemberId).Select(mn => mn.Nickname),
-                        initNum = gp.InitMember + 1//前端邏輯需+1
+                        memberName = db.Members.Where(mn => mn.Id == gp.MemberId).Select(mn => mn.Nickname).FirstOrDefault(),
+                        initNum = gp.InitMember,
+                        profileImg = db.Members.Where(mn => mn.Id == gp.MemberId).Select(mn => mn.Photo).FirstOrDefault(),
                     }).ToList()
-                }).ToList();
+            }).ToList();
 
-                // 然後，為每個群組獲取遊戲名稱
-                var finalGroups = matchedGroups.Select(g => new
+            // 然後，為每個群組獲取遊戲名稱
+            var finalGroups = matchedGroups.Select(g => new
+            {
+                groupId = g.groupId,
+                groupName = g.groupName,
+                startTime = g.startTime,
+                endTime = g.endTime,
+                isHomeGroup = g.isHomeGroup,
+                groupState = g.endTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.groupState.ToString(),
+                address = g.address,
+                beginnerTag = g.beginnerTag,
+                expertTag = g.expertTag,
+                practiceTag = g.practiceTag,
+                openTag = g.openTag,
+                tutorialTag = g.tutorialTag,
+                casualTag = g.casualTag,
+                competitiveTag = g.competitiveTag,
+                currentpeople = g.currentpeople,
+                totalMemberNum = g.totalMemberNum,
+                games = g.isHomeGroup ? new List<string>() : db.GroupGames
+                                                                .Where(gg => gg.GroupId == g.groupId)
+                                                                .Select(gg => gg.StoreInventory.GameDetails.Name)
+                                                                .ToList(),
+                leader = new
                 {
-                    groupId = g.groupId,
-                    groupName = g.groupName,
-                    startTime = g.startTime,
-                    endTime = g.endTime,
-                    isHomeGroup = g.isHomeGroup,
-                    groupState = g.endTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.groupState.ToString(),
-                    address = g.address,
-                    beginnerTag = g.beginnerTag,
-                    expertTag = g.expertTag,
-                    practiceTag = g.practiceTag,
-                    openTag = g.openTag,
-                    tutorialTag = g.tutorialTag,
-                    casualTag = g.casualTag,
-                    competitiveTag = g.competitiveTag,
-                    currentpeople = g.currentpeople,
-                    totalMemberNum = g.totalMemberNum,
-                    games = g.isHomeGroup ? new List<string>() : db.GroupGames
-                                                                    .Where(gg => gg.GroupId == g.groupId)
-                                                                    .Select(gg => gg.StoreInventory.GameDetails.Name)
-                                                                    .ToList(),
-                    leader = new
-                    {
-                        memberId = g.LeaderMemberId,
-                        memberName = g.LeaderNickname,
-                        initNum = g.LeaderInitMember + 1//前端邏輯需+1
-                        
-                    },
-                    members = db.GroupParticipants
-                    .Where(gp => gp.GroupId == g.groupId)
-                    .Select(gp => new
-                    {
-                        memberId = gp.MemberId,
-                        memberName = db.Members.Where(mn => mn.Id == gp.MemberId).Select(mn => mn.Nickname),
-                        initNum = gp.InitMember + 1//前端邏輯需+1
-                    }).ToList()
+                    memberId = g.LeaderMemberId,
+                    memberName = g.LeaderNickname,
+                    initNum = g.LeaderInitMember + 1,//前端邏輯需+1
+                    profileImg = BuildProfileImageUrl(g.LeaderProfileImg)
 
-                }).ToList();
+                },
 
-                if (!finalGroups.Any())
+                members = g.members.Select(m => new
                 {
-                    return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到符合條件的揪團活動" });
-                }
+                    memberId = m.memberId,
+                    memberName = m.memberName,
+                    initNum = m.initNum + 1, //前端邏輯需+1
+                    profileImg = BuildProfileImageUrl(m.profileImg),
+                }).ToList()
 
-                return Ok(finalGroups);
+            }).ToList();
+
+            if (!finalGroups.Any())
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到符合條件的揪團活動" });
+            }
+
+            return Ok(finalGroups);
 
         }
 

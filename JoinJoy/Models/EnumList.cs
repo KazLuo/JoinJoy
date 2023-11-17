@@ -59,5 +59,40 @@ namespace JoinJoy.Models
             buffet,
         }
 
+
+        public enum GroupFilter
+        {
+            relevance = 0,
+            Upcoming, // 即將開團
+            Newest //最新開團
+            
+        }
+        public enum GroupTag //遊戲面向
+        {
+            beginner,
+            expert,
+            practice,
+            open,
+            tutorial,
+            casual,
+            competitive
+        }
+
+        public enum Groupppl//揪團總人數
+        {
+            all,
+            twotofour,
+            fivetoseven,
+            eightmore
+        }
+        public enum Joinppl//可加入人數
+        {
+            all,
+            onetothree,
+            fourtosix,
+            sevenmore
+
+        }
+            
     }
 }
