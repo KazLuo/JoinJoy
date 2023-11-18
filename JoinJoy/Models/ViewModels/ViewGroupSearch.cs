@@ -8,11 +8,11 @@ namespace JoinJoy.Models.ViewModels
     public class ViewGroupSearch
     {
         public int? cityId { get; set; }
-        public DateTime? startDate { get; set; } = DateTime.Now;
-        public string gameName { get; set; } = "";
+        public DateTime? startDate { get; set; } = null;
+        public string gameName { get; set; } = null;
 
        
-        public EnumList.GroupFilter groupFilter { get; set; } = EnumList.GroupFilter.relevance;
+        public EnumList.GroupFilter groupFilter { get; set; }
         public EnumList.GroupTag groupTag { get; set; } 
         public EnumList.Groupppl groupppl { get; set; }
         public EnumList.Joinppl joinppl { get; set; }

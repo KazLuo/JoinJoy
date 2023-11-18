@@ -243,7 +243,7 @@ namespace JoinJoy.Controllers
                 }
             }
 
-            // 篩選日期
+            //篩選日期
             if (viewGroupSearch.startDate.HasValue)
             {
                 var startDate = viewGroupSearch.startDate.Value.Date;
@@ -251,6 +251,8 @@ namespace JoinJoy.Controllers
 
                 query = query.Where(g => g.StartTime >= startDate && g.StartTime < endDate);
             }
+
+
 
             // 篩選遊戲名稱
             if (!string.IsNullOrEmpty(viewGroupSearch.gameName))
@@ -265,10 +267,10 @@ namespace JoinJoy.Controllers
                 case EnumList.GroupFilter.relevance:
                     break;
                 case EnumList.GroupFilter.Upcoming:
-                    query = query.OrderBy(g => g.StartTime); 
+                    query = query.OrderBy(g => g.StartTime);
                     break;
                 case EnumList.GroupFilter.Newest:
-                    query = query.OrderByDescending(g => g.CreationDate); 
+                    query = query.OrderByDescending(g => g.CreationDate);
                     break;
             }
             //篩選揪團總人數
@@ -277,13 +279,13 @@ namespace JoinJoy.Controllers
                 case EnumList.Groupppl.all:
                     break;
                 case EnumList.Groupppl.twotofour:
-                    query = query.Where(g => g.MaxParticipants>=2 && g.MaxParticipants<= 4).OrderBy(m=>m.MaxParticipants); 
+                    query = query.Where(g => g.MaxParticipants >= 2 && g.MaxParticipants <= 4).OrderBy(m => m.MaxParticipants);
                     break;
                 case EnumList.Groupppl.fivetoseven:
                     query = query.Where(g => g.MaxParticipants >= 5 && g.MaxParticipants <= 7).OrderBy(m => m.MaxParticipants);
                     break;
                 case EnumList.Groupppl.eightmore:
-                    query = query.Where(g => g.MaxParticipants >=8 ).OrderBy(m => m.MaxParticipants);
+                    query = query.Where(g => g.MaxParticipants >= 8).OrderBy(m => m.MaxParticipants);
                     break;
 
             }
@@ -294,7 +296,7 @@ namespace JoinJoy.Controllers
                 case EnumList.Joinppl.all:
                     break;
                 case EnumList.Joinppl.onetothree:
-                    query = query.Where(g => (g.MaxParticipants-g.CurrentParticipants) >=1 && (g.MaxParticipants - g.CurrentParticipants) <= 3).OrderBy(g=>(g.MaxParticipants - g.CurrentParticipants));
+                    query = query.Where(g => (g.MaxParticipants - g.CurrentParticipants) >= 1 && (g.MaxParticipants - g.CurrentParticipants) <= 3).OrderBy(g => (g.MaxParticipants - g.CurrentParticipants));
                     break;
                 case EnumList.Joinppl.fourtosix:
                     query = query.Where(g => (g.MaxParticipants - g.CurrentParticipants) >= 4 && (g.MaxParticipants - g.CurrentParticipants) <= 6).OrderBy(g => (g.MaxParticipants - g.CurrentParticipants));
@@ -308,7 +310,8 @@ namespace JoinJoy.Controllers
             //篩選可加入人數
             switch (viewGroupSearch.groupTag)
             {
-               
+                case EnumList.GroupTag.all:
+                    break;
                 case EnumList.GroupTag.beginner:
                     query = query.Where(g => g.Beginner);
                     break;
@@ -319,6 +322,7 @@ namespace JoinJoy.Controllers
                     query = query.Where(g => g.Practice);
                     break;
                 case EnumList.GroupTag.open:
+                    query = query.Where(g => g.Open);
                     break;
                 case EnumList.GroupTag.tutorial:
                     query = query.Where(g => g.Tutorial);
@@ -332,7 +336,7 @@ namespace JoinJoy.Controllers
 
             }
 
-           
+
 
 
             // 選取匹配群組
@@ -345,8 +349,13 @@ namespace JoinJoy.Controllers
                 startTime = g.StartTime,
                 endTime = g.EndTime,
                 isHomeGroup = g.IsHomeGroup,
+                isprivate = g.isPrivate,
                 groupState = g.EndTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.GroupState.ToString(),
-                address = g.IsHomeGroup ? g.Address : g.Store.Name,
+                place = g.Address,
+                //address = g.IsHomeGroup ? g.Address : g.Store.Name,
+                storeName = g.Store.Name,
+                storeId = g.StoreId,
+                Storeaddress = g.Store.Address,
                 beginnerTag = g.Beginner,
                 expertTag = g.Expert,
                 practiceTag = g.Practice,
@@ -371,33 +380,44 @@ namespace JoinJoy.Controllers
                     }).ToList()
             }).ToList();
 
+
+
+
             // 然後，為每個群組獲取遊戲名稱
             var finalGroups = matchedGroups.Select(g => new
             {
                 groupId = g.groupId,
                 groupName = g.groupName,
-                startTime = g.startTime,
-                endTime = g.endTime,
+                place = g.place,
+                groupStatus = g.endTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.groupState.ToString(),
+                isPrivate = g.isprivate,
                 isHomeGroup = g.isHomeGroup,
-                groupState = g.endTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.groupState.ToString(),
-                address = g.address,
-                beginnerTag = g.beginnerTag,
-                expertTag = g.expertTag,
-                practiceTag = g.practiceTag,
-                openTag = g.openTag,
-                tutorialTag = g.tutorialTag,
-                casualTag = g.casualTag,
-                competitiveTag = g.competitiveTag,
-                currentpeople = g.currentpeople,
-                totalMemberNum = g.totalMemberNum,
-                games = g.isHomeGroup ? new List<string>() : db.GroupGames
+                store = new
+                {
+                    storeId = g.storeId,
+                    storeName = g.storeName,
+                    address = g.Storeaddress,
+                },
+                date = g.startTime.ToString("yyyy-MM-dd"),
+                startTime = g.startTime.ToString("HH:mm"),
+                endTime = g.endTime.ToString("HH:mm"),
+
+
+
+
+                games = g.isHomeGroup ? null : db.GroupGames
                                                                 .Where(gg => gg.GroupId == g.groupId)
-                                                                .Select(gg => gg.StoreInventory.GameDetails.Name)
+                                                                .Select(gg => new { gameName = gg.StoreInventory.GameDetails.Name, gameType = gg.StoreInventory.GameDetails.GameTypeId })
                                                                 .ToList(),
+
+
+
+
                 leader = new
                 {
-                    memberId = g.LeaderMemberId,
-                    memberName = g.LeaderNickname,
+                    userId = g.LeaderMemberId,
+                    userName = g.LeaderNickname,
+                    status = "leader",
                     initNum = g.LeaderInitMember + 1,//前端邏輯需+1
                     profileImg = BuildProfileImageUrl(g.LeaderProfileImg)
 
@@ -405,11 +425,25 @@ namespace JoinJoy.Controllers
 
                 members = g.members.Select(m => new
                 {
-                    memberId = m.memberId,
-                    memberName = m.memberName,
+                    userId = m.memberId,
+                    userName = m.memberName,
+                    status = db.GroupParticipants.Where(gp => gp.MemberId == m.memberId && g.groupId == gp.GroupId).Select(gp => gp.AttendanceStatus.ToString()).FirstOrDefault(),
                     initNum = m.initNum + 1, //前端邏輯需+1
                     profileImg = BuildProfileImageUrl(m.profileImg),
-                }).ToList()
+                }).ToList(),
+
+                tags = new List<string>
+{
+    g.beginnerTag ? "新手團" : null,
+    g.expertTag ? "老手團" : null,
+    g.practiceTag ? "經驗切磋" : null,
+    g.openTag ? "不限定" : null,
+    g.tutorialTag ? "教學團" : null,
+    g.casualTag ? "輕鬆" : null,
+    g.competitiveTag ? "競技" : null
+}.Where(t => t != null).ToList(),
+                currentpeople = g.currentpeople,
+                totalMemberNum = g.totalMemberNum,
 
             }).ToList();
 

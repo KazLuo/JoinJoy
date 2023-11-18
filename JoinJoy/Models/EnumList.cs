@@ -69,6 +69,7 @@ namespace JoinJoy.Models
         }
         public enum GroupTag //遊戲面向
         {
+            all,
             beginner,
             expert,
             practice,
