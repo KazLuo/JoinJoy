@@ -149,6 +149,8 @@ namespace JoinJoy.Controllers
                 store.Address,
                 ProfileImgPath = store.Photo,
                 CoverPhotoPath = store.StorePhotos.FirstOrDefault(sp => sp.StoreId == store.Id && sp.IsCover).PhotoPath,
+                store.OpenTime,
+                store.CloseTime,
                 store.Price,
                 store.Wifi,
                 store.Teach,
@@ -220,6 +222,8 @@ namespace JoinJoy.Controllers
                 address = store.Address,
                 profileImg = string.IsNullOrEmpty(store.ProfileImgPath) ? null : BuildStoreImageUrl(store.ProfileImgPath),
                 cover = string.IsNullOrEmpty(store.CoverPhotoPath) ? null : BuildStoreImageUrl(store.CoverPhotoPath),
+                openTime = store.OpenTime,
+                closeTime = store.CloseTime,
                 score = CalculateStoreScore(store.Id),
                 cost = store.Price,
                 tags = new List<string>
