@@ -506,7 +506,7 @@ namespace JoinJoy.Controllers
 
         #region"取得最新評價"
         [HttpGet]
-        [Route("getneweststorerating")]
+        [Route("getnewestrating")]
         public  IHttpActionResult GetNewestRating()
         {
             var storeRatingsQuery = (from StoreRating in db.StoreRatings
