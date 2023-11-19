@@ -402,7 +402,7 @@ namespace JoinJoy.Controllers
                      {
                          userId = sr.userId,
                          userName = sr.userName,
-                         userImg = BuildProfileImageUrl(sr.userImg),
+                         profileImg = BuildProfileImageUrl(sr.userImg),
                          groupName = sr.groupName,
                          groupDate = sr.groupDate,
                          memberNum = sr.memberNum,
@@ -434,7 +434,7 @@ namespace JoinJoy.Controllers
                 {
                     sr.userId,
                     sr.userName,
-                    sr.userImg,
+                    sr.profileImg,
                 },
                 group = new 
                 {
@@ -482,23 +482,24 @@ namespace JoinJoy.Controllers
 
             // 計算評價的總數量
             var totalRatingsCount = ratingsList.Count;
-
-            return Ok(new
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data= new
             {
                 totalRatingsCount = totalRatingsCount,
-                averageScore =new
+                averageScore = new
                 {
-                    
+
                     environment = totalCleanAverage,
                     service = totalServiceAverage,
                     game = totalVarietyAverage,
                     costValue = totalValueAverage,
                     overall = overallAvgRating,
-                    
+
                 },
                 comments = comment
 
+            }
             });
+          
         }
         #endregion
         private string BuildStoreImageUrl(string photo)

@@ -84,16 +84,28 @@ namespace JoinJoy.Controllers
                 cover = string.IsNullOrEmpty(store.CoverPhotoPath) ? null : BuildStoreImageUrl(store.CoverPhotoPath),
                 score = CalculateStoreScore(store.Id),
                 cost = store.Price,
-                tag = new
-                {
-                    wifiTag = store.Wifi,
-                    teachTag = store.Teach,
-                    meal = store.Meal,
-                    mealout = store.Mealout,
-                    buffet = store.Buffet,
-                    hqTag = store.HqTag,
-                    popTag = store.PopTag
-                },
+
+                tags = new List<string>
+                    {
+                        store.Wifi ? "wifiTag" : null,
+                        store.Teach ? "teachTag" : null,
+                        store.Meal ? "meal" : null,
+                        store.Mealout ? "mealout" : null,
+                        store.Buffet ? "buffet" : null,
+
+                    }.Where(t => t != null).ToList(),
+                hqTag = store.HqTag,
+                popTag = store.PopTag
+                //tag = new
+                //{
+                //    wifiTag = store.Wifi,
+                //    teachTag = store.Teach,
+                //    meal = store.Meal,
+                //    mealout = store.Mealout,
+                //    buffet = store.Buffet,
+                //    hqTag = store.HqTag,
+                //    popTag = store.PopTag
+                //},
             }).ToList();
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { matchedStores } });
         }
@@ -186,13 +198,22 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "所選地區找不到店家" });
             }
-            // 計算分頁
-            int skip = (viewStoreSearch.page - 1) * viewStoreSearch.pageSize;
+            //// 計算分頁
+            //int skip = (viewStoreSearch.page - 1) * viewStoreSearch.pageSize;
 
-            // 應用分頁
-            var pagedStoresData = matchedStoresData.Skip(skip).Take(viewStoreSearch.pageSize).ToList();
+            //// 應用分頁
+           
+            //var pagedStoresData = matchedStoresData.Skip(skip).Take(viewStoreSearch.pageSize).ToList();
 
-            var matchedStores = pagedStoresData.Select(store => new
+
+            // 檢查是否應用分頁
+            if (viewStoreSearch.page != 0 && viewStoreSearch.pageSize != 0)
+            {
+                int skip = (viewStoreSearch.page - 1) * viewStoreSearch.pageSize;
+                matchedStoresData = matchedStoresData.Skip(skip).Take(viewStoreSearch.pageSize).ToList();
+            }
+
+            var matchedStores = matchedStoresData.Select(store => new
             {
                 storeId = store.Id,
                 storeName = store.Name,
@@ -201,16 +222,17 @@ namespace JoinJoy.Controllers
                 cover = string.IsNullOrEmpty(store.CoverPhotoPath) ? null : BuildStoreImageUrl(store.CoverPhotoPath),
                 score = CalculateStoreScore(store.Id),
                 cost = store.Price,
-                tag = new
-                {
-                    wifiTag = store.Wifi,
-                    teachTag = store.Teach,
-                    meal = store.Meal,
-                    mealout = store.Mealout,
-                    buffet = store.Buffet,
-                    hqTag = store.HqTag,
-                    popTag = store.PopTag
-                },
+                tags = new List<string>
+                    {
+                        store.Wifi ? "wifiTag" : null,
+                        store.Teach ? "teachTag" : null,
+                        store.Meal ? "meal" : null,
+                        store.Mealout ? "mealout" : null,
+                        store.Buffet ? "buffet" : null,
+
+                    }.Where(t => t != null).ToList(),
+                hqTag = store.HqTag,
+                popTag = store.PopTag
             }).ToList();
             return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { matchedStores } });
         }
@@ -255,9 +277,17 @@ namespace JoinJoy.Controllers
 
 
             // 篩選遊戲名稱
+            //if (!string.IsNullOrEmpty(viewGroupSearch.gameName))
+            //{
+            //    query = query.Where(g => g.GroupGames.Any(game => game.StoreInventory.GameDetails.Name.Contains(viewGroupSearch.gameName)));
+            //}
+
+            // 篩選遊戲名稱 & 團名
             if (!string.IsNullOrEmpty(viewGroupSearch.gameName))
             {
-                query = query.Where(g => g.GroupGames.Any(game => game.StoreInventory.GameDetails.Name.Contains(viewGroupSearch.gameName)));
+                query = query.Where(g => g.GroupName.Contains(viewGroupSearch.gameName)
+                                         || g.GroupGames.Any(game => game.StoreInventory.GameDetails.Name.Contains(viewGroupSearch.gameName)));
+                  
             }
 
             //篩選關聯性
@@ -433,15 +463,15 @@ namespace JoinJoy.Controllers
                 }).ToList(),
 
                 tags = new List<string>
-{
-    g.beginnerTag ? "新手團" : null,
-    g.expertTag ? "老手團" : null,
-    g.practiceTag ? "經驗切磋" : null,
-    g.openTag ? "不限定" : null,
-    g.tutorialTag ? "教學團" : null,
-    g.casualTag ? "輕鬆" : null,
-    g.competitiveTag ? "競技" : null
-}.Where(t => t != null).ToList(),
+                    {
+                        g.beginnerTag ? "新手團" : null,
+                        g.expertTag ? "老手團" : null,
+                        g.practiceTag ? "經驗切磋" : null,
+                        g.openTag ? "不限定" : null,
+                        g.tutorialTag ? "教學團" : null,
+                        g.casualTag ? "輕鬆" : null,
+                        g.competitiveTag ? "競技" : null
+                    }.Where(t => t != null).ToList(),
                 currentpeople = g.currentpeople,
                 totalMemberNum = g.totalMemberNum,
 
