@@ -502,6 +502,65 @@ namespace JoinJoy.Controllers
           
         }
         #endregion
+
+
+        #region"取得最新評價"
+        [HttpGet]
+        [Route("getneweststorerating")]
+        public  IHttpActionResult GetNewestRating()
+        {
+            var storeRatingsQuery = (from StoreRating in db.StoreRatings
+                                     join Group in db.Groups on StoreRating.GroupId equals Group.GroupId
+                                     join Member in db.Members on StoreRating.MemberId equals Member.Id
+                                     join Store in db.Stores on Group.StoreId equals Store.Id
+                                     select new
+                                     {
+                                         userId = Member.Id,
+                                         userName = Member.Nickname,
+                                         profileImg = Member.Photo,
+                                         groupName = Group.GroupName,
+                                         groupDate = Group.StartTime,
+                                         memberNum = Group.CurrentParticipants,
+                                         storeName = Store.Name,
+                                         storeId = Store.Id,
+                                         environment = StoreRating.Clean,
+                                         service = StoreRating.Service,
+                                         game = StoreRating.Variety,
+                                         costValue = StoreRating.Value,
+                                         commentId = StoreRating.Id,
+                                         msg = StoreRating.Comment,
+                                         commentDate = StoreRating.RatingDate
+                                     })
+                        .OrderByDescending(sr => sr.commentDate) // 根據評價日期降序排序
+                        .Take(10) // 取前10個項目
+                        .ToList();
+
+            var ratingsWithAverage = storeRatingsQuery.ToList().Select(sr => new
+            {
+                commentBy = new
+                {
+                    sr.userId,
+                    sr.userName,
+                    sr.profileImg,
+                },
+                group = new
+                {
+                    sr.groupName,
+                    sr.groupDate,
+                    sr.memberNum,
+                    sr.storeId,
+                    sr.storeName,
+                },
+                sr.commentId,
+                sr.msg,
+                sr.commentDate,
+                score = (sr.environment + sr.service + sr.game + sr.costValue) / 4.0 // 有四個評分項目
+            });
+
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = ratingsWithAverage });
+
+        }
+        #endregion
         private string BuildStoreImageUrl(string photo)
         {
             if (string.IsNullOrEmpty(photo))
