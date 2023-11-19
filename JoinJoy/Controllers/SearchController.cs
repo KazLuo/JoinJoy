@@ -422,12 +422,14 @@ namespace JoinJoy.Controllers
                 groupStatus = g.endTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.groupState.ToString(),
                 isPrivate = g.isprivate,
                 isHomeGroup = g.isHomeGroup,
-                store = new
-                {
-                    storeId = g.storeId,
-                    storeName = g.storeName,
-                    address = g.Storeaddress,
-                },
+                store = g.storeId == null && g.storeName == null && g.Storeaddress == null
+            ? null
+            : new
+            {
+                storeId = g.storeId,
+                storeName = g.storeName,
+                address = g.Storeaddress,
+            },
                 date = g.startTime.ToString("yyyy-MM-dd"),
                 startTime = g.startTime.ToString("HH:mm"),
                 endTime = g.endTime.ToString("HH:mm"),
@@ -481,8 +483,7 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到符合條件的揪團活動" });
             }
-
-            return Ok(finalGroups);
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { finalGroups } });
 
         }
 
