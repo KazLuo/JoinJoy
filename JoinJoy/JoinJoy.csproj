@@ -286,6 +286,7 @@
     <Compile Include="Models\ViewModels\ViewGroup.cs" />
     <Compile Include="Models\ViewModels\ViewGroupComment.cs" />
     <Compile Include="Models\ViewModels\ViewGroupSearch.cs" />
+    <Compile Include="Models\ViewModels\ViewInterestingGroup.cs" />
     <Compile Include="Models\ViewModels\ViewJoinGroup.cs" />
     <Compile Include="Models\ViewModels\Viewlogin.cs" />
     <Compile Include="Models\ViewModels\ViewPasswordChange.cs" />

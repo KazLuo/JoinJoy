@@ -414,6 +414,13 @@ namespace JoinJoy.Controllers
             }).ToList();
 
 
+            //分頁
+            if (viewGroupSearch.page != 0 && viewGroupSearch.pageSize != 0)
+            {
+                int skip = (viewGroupSearch.page - 1) * viewGroupSearch.pageSize;
+                matchedGroups = matchedGroups.Skip(skip).Take(viewGroupSearch.pageSize).ToList();
+            }
+
 
 
             // 然後，為每個群組獲取遊戲名稱
@@ -491,7 +498,150 @@ namespace JoinJoy.Controllers
         }
 
         #endregion
+        /// <summary>
+        /// 取得會員有興趣的團
+        /// </summary>
+        /// <param name="viewInterestingGroup"></param>
+        /// <returns></returns>
+        #region
+        [HttpPost]
+        [Route("search/groupsinterest/")]
+        public IHttpActionResult GroupsInterest(ViewInterestingGroup viewInterestingGroup)
+        {
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int userId = (int)userToken["Id"];
+            var memberInterests = db.MemberGamePrefs.Where(m => m.MemberId == userId).Select(m => m.GameType.TypeName).ToList(); // 獲取興趣列表
 
+            var query = db.Groups.AsQueryable();
+            query = query.Where(g => g.EndTime > DateTime.Now && g.GroupState == EnumList.GroupState.開團中);
+
+            // 如果有興趣列表，基於會員興趣篩選群組
+            if (memberInterests != null && memberInterests.Any())
+            {
+                query = query.Where(g => g.GroupGames.Any(game => memberInterests.Contains(game.StoreInventory.GameDetails.GameType.TypeName)));
+            }
+
+            // 其他篩選條件（例如基於地點的篩選）
+
+            var matchedGroups = query.Select(g => new
+            {
+
+
+                groupId = g.GroupId,
+                groupName = g.GroupName,
+                startTime = g.StartTime,
+                endTime = g.EndTime,
+                isHomeGroup = g.IsHomeGroup,
+                isprivate = g.isPrivate,
+                groupState = g.EndTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.GroupState.ToString(),
+                place = g.Address,
+                //address = g.IsHomeGroup ? g.Address : g.Store.Name,
+                storeName = g.Store.Name,
+                storeId = g.StoreId,
+                Storeaddress = g.Store.Address,
+                beginnerTag = g.Beginner,
+                expertTag = g.Expert,
+                practiceTag = g.Practice,
+                openTag = g.Open,
+                tutorialTag = g.Tutorial,
+                casualTag = g.Casual,
+                competitiveTag = g.Casual,
+                currentpeople = g.CurrentParticipants,
+                totalMemberNum = g.MaxParticipants,
+                LeaderMemberId = g.MemberId,
+                LeaderNickname = g.Member.Nickname,
+                LeaderInitMember = g.InitMember,
+                LeaderProfileImg = g.Member.Photo,
+                members = db.GroupParticipants
+                    .Where(gp => gp.GroupId == g.GroupId)
+                    .Select(gp => new
+                    {
+                        memberId = gp.MemberId,
+                        memberName = db.Members.Where(mn => mn.Id == gp.MemberId).Select(mn => mn.Nickname).FirstOrDefault(),
+                        initNum = gp.InitMember,
+                        profileImg = db.Members.Where(mn => mn.Id == gp.MemberId).Select(mn => mn.Photo).FirstOrDefault(),
+                    }).ToList()
+            }).ToList();
+
+            //分頁
+            if (viewInterestingGroup.page != 0 && viewInterestingGroup.pageSize != 0)
+            {
+                int skip = (viewInterestingGroup.page - 1) * viewInterestingGroup.pageSize;
+                matchedGroups = matchedGroups.Skip(skip).Take(viewInterestingGroup.pageSize).ToList();
+            }
+
+            var finalGroups = matchedGroups.Select(g => new
+            {
+                groupId = g.groupId,
+                groupName = g.groupName,
+                place = g.place,
+                groupStatus = g.endTime < DateTime.Now ? EnumList.GroupState.已結束.ToString() : g.groupState.ToString(),
+                isPrivate = g.isprivate,
+                isHomeGroup = g.isHomeGroup,
+                store = g.storeId == null && g.storeName == null && g.Storeaddress == null
+           ? null
+           : new
+           {
+               storeId = g.storeId,
+               storeName = g.storeName,
+               address = g.Storeaddress,
+           },
+                date = g.startTime.ToString("yyyy-MM-dd"),
+                startTime = g.startTime.ToString("HH:mm"),
+                endTime = g.endTime.ToString("HH:mm"),
+
+
+
+
+                games = g.isHomeGroup ? null : db.GroupGames
+                                                               .Where(gg => gg.GroupId == g.groupId)
+                                                               .Select(gg => new { gameName = gg.StoreInventory.GameDetails.Name, gameType = gg.StoreInventory.GameDetails.GameTypeId })
+                                                               .ToList(),
+
+
+
+
+                leader = new
+                {
+                    userId = g.LeaderMemberId,
+                    userName = g.LeaderNickname,
+                    status = "leader",
+                    initNum = g.LeaderInitMember + 1,//前端邏輯需+1
+                    profileImg = BuildProfileImageUrl(g.LeaderProfileImg)
+
+                },
+
+                members = g.members.Select(m => new
+                {
+                    userId = m.memberId,
+                    userName = m.memberName,
+                    status = db.GroupParticipants.Where(gp => gp.MemberId == m.memberId && g.groupId == gp.GroupId).Select(gp => gp.AttendanceStatus.ToString()).FirstOrDefault(),
+                    initNum = m.initNum + 1, //前端邏輯需+1
+                    profileImg = BuildProfileImageUrl(m.profileImg),
+                }).ToList(),
+
+                tags = new List<string>
+                    {
+                        g.beginnerTag ? "新手團" : null,
+                        g.expertTag ? "老手團" : null,
+                        g.practiceTag ? "經驗切磋" : null,
+                        g.openTag ? "不限定" : null,
+                        g.tutorialTag ? "教學團" : null,
+                        g.casualTag ? "輕鬆" : null,
+                        g.competitiveTag ? "競技" : null
+                    }.Where(t => t != null).ToList(),
+                currentpeople = g.currentpeople,
+                totalMemberNum = g.totalMemberNum,
+
+            }).ToList();
+
+            if (!finalGroups.Any())
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到符合條件的揪團活動" });
+            }
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data =  finalGroups  });
+        }
+        #endregion
 
 
         private double CalculateStoreScore(int storeId)
