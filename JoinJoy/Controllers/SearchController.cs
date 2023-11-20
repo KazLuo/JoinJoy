@@ -258,7 +258,7 @@ namespace JoinJoy.Controllers
         {
 
             var query = db.Groups.AsQueryable();
-            query = query.Where(g => g.EndTime > DateTime.Now && g.GroupState == EnumList.GroupState.開團中);
+            query = query.Where(g => g.EndTime > DateTime.Now && g.GroupState == EnumList.GroupState.開團中 && g.isPrivate != true);
 
             // 篩選城市
             if (viewGroupSearch.cityId.HasValue)
@@ -513,7 +513,7 @@ namespace JoinJoy.Controllers
             var memberInterests = db.MemberGamePrefs.Where(m => m.MemberId == userId).Select(m => m.GameType.TypeName).ToList(); // 獲取興趣列表
 
             var query = db.Groups.AsQueryable();
-            query = query.Where(g => g.EndTime > DateTime.Now && g.GroupState == EnumList.GroupState.開團中);
+            query = query.Where(g => g.EndTime > DateTime.Now && g.GroupState == EnumList.GroupState.開團中 && g.isPrivate!= true);
 
             // 如果有興趣列表，基於會員興趣篩選群組
             if (memberInterests != null && memberInterests.Any())
@@ -521,7 +521,7 @@ namespace JoinJoy.Controllers
                 query = query.Where(g => g.GroupGames.Any(game => memberInterests.Contains(game.StoreInventory.GameDetails.GameType.TypeName)));
             }
 
-            // 其他篩選條件（例如基於地點的篩選）
+            
 
             var matchedGroups = query.Select(g => new
             {
