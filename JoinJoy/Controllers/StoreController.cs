@@ -540,7 +540,7 @@ namespace JoinJoy.Controllers
                 {
                     sr.userId,
                     sr.userName,
-                    sr.profileImg,
+                    profileImg = BuildProfileImageUrl(sr.profileImg),
                 },
                 group = new
                 {

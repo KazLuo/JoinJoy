@@ -200,13 +200,7 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "所選地區找不到店家" });
             }
-            //// 計算分頁
-            //int skip = (viewStoreSearch.page - 1) * viewStoreSearch.pageSize;
-
-            //// 應用分頁
            
-            //var pagedStoresData = matchedStoresData.Skip(skip).Take(viewStoreSearch.pageSize).ToList();
-
 
             // 檢查是否應用分頁
             if (viewStoreSearch.page != 0 && viewStoreSearch.pageSize != 0)
@@ -246,10 +240,10 @@ namespace JoinJoy.Controllers
         /// <summary>
         /// 搜尋揪團
         /// </summary>
-        /// <param name="viewGroupSearch.groupFilter">篩選(0=最相關 1=即將開團 2=最新開團)</param>
-        /// <param name="viewGroupSearch.groupTag">遊戲面向(0=beginner 1=expert 2=practice 3=open 4=tutorial 5=casual 6=competitive)</param>
-        /// <param name="viewGroupSearch.groupppl">揪團總人數(0=all 1=twotofour 2=fivetoseven 3=eightmore)</param>
-        /// <param name="viewGroupSearch.joinppl">可加入人數(0=all 1=onetothree 2=fourtosix 3=sevenmore)</param>
+        /// <param name="viewGroupSearch">篩選(0=最相關 1=即將開團 2=最新開團)</param>
+        /// <param >遊戲面向(0=beginner 1=expert 2=practice 3=open 4=tutorial 5=casual 6=competitive)</param>
+        /// <param >揪團總人數(0=all 1=twotofour 2=fivetoseven 3=eightmore)</param>
+        /// <param >可加入人數(0=all 1=onetothree 2=fourtosix 3=sevenmore)</param>
         /// <returns></returns>
         #region"搜尋揪團"
         [HttpPost]
@@ -258,7 +252,7 @@ namespace JoinJoy.Controllers
         {
 
             var query = db.Groups.AsQueryable();
-            query = query.Where(g => g.EndTime > DateTime.Now && g.GroupState == EnumList.GroupState.開團中 && g.isPrivate != true);
+            query = query.Where(g => g.EndTime > DateTime.Now && g.GroupState == EnumList.GroupState.開團中 && g.isPrivate != true && (g.MaxParticipants - g.CurrentParticipants) != 0);
 
             // 篩選城市
             if (viewGroupSearch.cityId.HasValue)
