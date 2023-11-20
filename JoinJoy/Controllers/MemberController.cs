@@ -1052,7 +1052,9 @@ namespace JoinJoy.Controllers
         }
         #endregion
 
-  
+
+
+
 
         private string BuildProfileImageUrl(string photo)
         {
@@ -1060,7 +1062,7 @@ namespace JoinJoy.Controllers
             {
                 return null; // 或者返回一個默認的圖片路徑
             }
-            return $"/profile/{photo}";
+            return $"http://4.224.16.99/upload/profile/{photo}";
         }
 
 
