@@ -258,6 +258,7 @@ namespace JoinJoy.Controllers
         {
 
             var query = db.Groups.AsQueryable();
+            query = query.Where(g => g.EndTime > DateTime.Now && g.GroupState == EnumList.GroupState.開團中);
 
             // 篩選城市
             if (viewGroupSearch.cityId.HasValue)
@@ -280,18 +281,16 @@ namespace JoinJoy.Controllers
 
 
 
-            // 篩選遊戲名稱
-            //if (!string.IsNullOrEmpty(viewGroupSearch.gameName))
-            //{
-            //    query = query.Where(g => g.GroupGames.Any(game => game.StoreInventory.GameDetails.Name.Contains(viewGroupSearch.gameName)));
-            //}
 
-            // 篩選遊戲名稱 & 團名
+
+            //// 篩選多種 遊戲名稱 & 團名 & 遊戲類型 (使用split ","分割)
             if (!string.IsNullOrEmpty(viewGroupSearch.gameName))
             {
-                query = query.Where(g => g.GroupName.Contains(viewGroupSearch.gameName)
-                                         || g.GroupGames.Any(game => game.StoreInventory.GameDetails.Name.Contains(viewGroupSearch.gameName)));
-                  
+                var keywords = viewGroupSearch.gameName.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+                query = query.Where(g => keywords.Any(kw => g.GroupName.Contains(kw))
+                                         || g.GroupGames.Any(game => keywords.Any(kw => game.StoreInventory.GameDetails.Name.Contains(kw)))
+                                         || g.GroupGames.Any(game => keywords.Any(kw => game.StoreInventory.GameDetails.GameType.TypeName.Contains(kw))));
             }
 
             //篩選關聯性
@@ -506,22 +505,23 @@ namespace JoinJoy.Controllers
 
             return ratings.Average(s => (s.Value + s.Variety + s.Service + s.Clean) / 4.0);
         }
-        private string BuildProfileImageUrl(string photo)
-        {
-            if (string.IsNullOrEmpty(photo))
-            {
-                return null; // 或者返回一個默認的圖片路徑
-            }
-            return $"http://4.224.16.99/upload/profile/{photo}";
-        }
-
         private string BuildStoreImageUrl(string photo)
         {
             if (string.IsNullOrEmpty(photo))
             {
                 return null; // 或者返回一個默認的圖片路徑
             }
-            return $"http://4.224.16.99/upload/store/{photo}";
+            return $"/store/profile/{photo}";
         }
+
+        private string BuildProfileImageUrl(string photo)
+        {
+            if (string.IsNullOrEmpty(photo))
+            {
+                return null; // 或者返回一個默認的圖片路徑
+            }
+            return $"/profile/{photo}";
+        }
+
     }
 }

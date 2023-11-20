@@ -296,8 +296,6 @@ namespace JoinJoy.Controllers
             }
         }
         #endregion
-       
-
         /// <summary>
         /// 取得店家頭像
         /// </summary>
@@ -331,7 +329,6 @@ namespace JoinJoy.Controllers
             return ResponseMessage(result);
         }
         #endregion
-
         /// <summary>
         /// 取得所有店家ID
         /// </summary>
@@ -502,8 +499,10 @@ namespace JoinJoy.Controllers
           
         }
         #endregion
-
-
+        /// <summary>
+        /// 取得最新評價
+        /// </summary>
+        /// <returns></returns>
         #region"取得最新評價"
         [HttpGet]
         [Route("getnewestrating")]
@@ -567,7 +566,7 @@ namespace JoinJoy.Controllers
             {
                 return null; // 或者返回一個默認的圖片路徑
             }
-            return $"http://4.224.16.99/upload/store/{photo}";
+            return $"/store/profile/{photo}";
         }
 
         private string BuildProfileImageUrl(string photo)
@@ -576,7 +575,7 @@ namespace JoinJoy.Controllers
             {
                 return null; // 或者返回一個默認的圖片路徑
             }
-            return $"http://4.224.16.99/upload/profile/{photo}";
+            return $"/profile/{photo}";
         }
 
     }
