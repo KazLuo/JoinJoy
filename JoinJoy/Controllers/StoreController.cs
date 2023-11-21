@@ -299,6 +299,124 @@ namespace JoinJoy.Controllers
         }
         #endregion
         /// <summary>
+        /// 上傳店家相片(置中裁切版)
+        /// </summary>
+        /// <returns></returns>
+        #region "上傳店家相片(置中裁切版)"
+        [HttpPost]
+        [JwtAuthFilter]
+        [Route("uploadphotomid")]
+        public async Task<IHttpActionResult> UploadStorePhotoMid()
+        {
+            try
+            {
+                var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+                int memberId = (int)userToken["Id"];
+
+                // 檢查是否為店主
+                var store = db.Stores.FirstOrDefault(s => s.MemberId == memberId);
+                if (store == null)
+                {
+                    return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "用戶不是店主或店家不存在。" });
+                }
+
+                // 檢查請求是否包含 multipart/form-data。
+                if (!Request.Content.IsMimeMultipartContent())
+                {
+                    throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
+                }
+
+                // 檢查資料夾是否存在，若不存在則創建
+                string root = HttpContext.Current.Server.MapPath("~/upload/store/profile");
+                if (!Directory.Exists(root))
+                {
+                    Directory.CreateDirectory(root);
+                }
+
+                // 讀取MIME資料
+                var provider = new MultipartMemoryStreamProvider();
+                await Request.Content.ReadAsMultipartAsync(provider);
+
+                // 獲取檔案擴展名
+                string fileNameData = provider.Contents.FirstOrDefault().Headers.ContentDisposition.FileName.Trim('\"');
+                string fileType = fileNameData.Remove(0, fileNameData.LastIndexOf('.')); // 如 .jpg
+
+                // 定義檔案名稱
+                string fileName = "Store_" + store.Id + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + fileType;
+
+                // 儲存圖片
+                var fileBytes = await provider.Contents.FirstOrDefault().ReadAsByteArrayAsync();
+                var outputPath = Path.Combine(root, fileName);
+                using (var output = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+                {
+                    await output.WriteAsync(fileBytes, 0, fileBytes.Length);
+                }
+
+                // 讀取圖片並調整尺寸
+                using (var image = SixLabors.ImageSharp.Image.Load(outputPath))
+                {
+                    // 计算中心裁剪的尺寸
+                    int targetWidth = 372;
+                    int targetHeight = 175;
+                    var resizeOptions = new ResizeOptions
+                    {
+                        Size = new Size(targetWidth, targetHeight),
+                        Mode = ResizeMode.Crop,  // 设置为裁剪模式
+                        Position = AnchorPositionMode.Center // 置中裁剪
+                    };
+
+                    image.Mutate(x => x.Resize(resizeOptions));
+
+                    // 使用高质量设置保存图片
+                    var encoder = new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder
+                    {
+                        Quality = 90 // 设置较高的质量值
+                    };
+                    image.SaveAsJpeg(outputPath, encoder);
+                }
+
+                // 創建並保存 StorePhoto 實例
+                var storePhoto = new StorePhoto
+                {
+                    StoreId = store.Id,
+                    PhotoPath = fileName,
+                    IsCover = false,
+                    InitDate = DateTime.Now
+                };
+                db.StorePhotos.Add(storePhoto);
+                db.SaveChanges();
+
+                return Ok(new
+                {
+                    statusCode = HttpStatusCode.OK,
+                    status = true,
+                    message = "檔案上傳成功。",
+                    data = new
+                    {
+                        FileName = fileName,
+                        FilePath = Path.Combine("/upload/store/profile", fileName)
+                    },
+                });
+            }
+            catch (DbEntityValidationException dbEx)
+            {
+                var errorMessages = dbEx.EntityValidationErrors
+                    .SelectMany(x => x.ValidationErrors)
+                    .Select(x => x.ErrorMessage);
+
+                var fullErrorMessage = string.Join("; ", errorMessages);
+
+                var exceptionMessage = string.Concat(dbEx.Message, " 驗證錯誤訊息: ", fullErrorMessage);
+
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "資料庫驗證失敗: " + exceptionMessage });
+            }
+            catch (Exception e)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "上傳失敗，請再試一次。" + e.Message });
+            }
+        }
+        #endregion
+        /// <summary>
         /// 取得店家頭像
         /// </summary>
         /// <param name="storeId">測試可以用7</param>

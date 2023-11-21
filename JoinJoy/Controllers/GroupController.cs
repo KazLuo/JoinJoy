@@ -520,21 +520,29 @@ namespace JoinJoy.Controllers
         /// <returns></returns>
         #region"取得開團資訊"
         [HttpGet]
+        [JwtAuthFilter]
         [Route("detail/{groupId}")]
         public IHttpActionResult GetGroupDetails(int groupId)
         {
-            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId);
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int memberId = (int)userToken["Id"];
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId && g.MemberId ==memberId);
 
             if (group == null)
             {
-                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在" });
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在,或是非團主" });
             }
             var groupWithGames = db.Groups
                                    .Include("GroupGames.StoreInventory.Game")  //  EF6
                                    .Where(g => g.GroupId == groupId)
                                    .Select(g => new
                                    {
-                                       storeId = g.StoreId,
+                                       store = new
+                                       {
+                                           storeId = g.Store != null ? g.Store.Id : (int?)null,
+                                           storeName = g.Store != null ? g.Store.Name : null,
+                                           plane = g.Store != null ? g.Store.Address : null,
+                                       },                                      
                                        groupName = g.GroupName,
                                        startTime = g.StartTime,
                                        endTime = g.EndTime,
