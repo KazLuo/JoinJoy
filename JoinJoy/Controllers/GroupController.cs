@@ -552,13 +552,13 @@ namespace JoinJoy.Controllers
                                        plane = g.Address,
                                        initMember = g.InitMember,
                                        tags = new List<string> {
-                               g.Beginner ? "新手團" : null,
-                               g.Expert ? "老手團" : null,
-                               g.Practice ? "經驗切磋" : null,
-                               g.Open ? "不限定" : null,
-                               g.Tutorial ? "教學團" : null,
-                               g.Casual ? "輕鬆" : null,
-                               g.Competitive ? "競技" : null
+                                           g.Beginner ? "新手團" : null,
+                                           g.Expert ? "老手團" : null,
+                                           g.Practice ? "經驗切磋" : null,
+                                           g.Open ? "不限定" : null,
+                                           g.Tutorial ? "教學團" : null,
+                                           g.Casual ? "輕鬆" : null,
+                                           g.Competitive ? "競技" : null
                                        }.Where(tag => tag != null).ToList(),
                                        isPrivate = g.isPrivate,
                                        games = g.GroupGames
@@ -577,8 +577,7 @@ namespace JoinJoy.Controllers
             {
                 return NotFound();
             }
-
-            return Ok(groupWithGames); // 直接返回匿名類型的物件，將由全局的 JSON 序列化設置控制命名
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { groupWithGames } });
         }
 
         #endregion
