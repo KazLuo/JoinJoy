@@ -55,7 +55,7 @@ namespace JoinJoy.Controllers
             }
 
             // 檢查開團者與攜帶人數是否超過totalMemberNum
-            if ( model.initNum > model.totalMemberNum)
+            if (model.initNum > model.totalMemberNum)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團主及同行親友不可超過上限人數" });
             }
@@ -113,7 +113,7 @@ namespace JoinJoy.Controllers
                 IsHomeGroup = model.isHomeGroup,
                 Address = model.place,
                 InitMember = model.initNum,
-                CurrentParticipants =  model.initNum,
+                CurrentParticipants = model.initNum,
                 //修改邏輯
                 //CurrentParticipants = 1 + model.initNum,
                 Beginner = model.beginnerTag,
@@ -294,11 +294,11 @@ namespace JoinJoy.Controllers
             //    return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "已經滿團囉!" });
             //}
             //修改邏輯
-            if (group.CurrentParticipants + viewJoinGroup.initNum  > group.MaxParticipants)
+            if (group.CurrentParticipants + viewJoinGroup.initNum > group.MaxParticipants)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "已經滿團囉!" });
             }
-            if (viewJoinGroup.initNum ==0)
+            if (viewJoinGroup.initNum == 0)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "參加人數不可為0!" });
             }
@@ -444,7 +444,7 @@ namespace JoinJoy.Controllers
             if (status == EnumList.JoinGroupState.member)
             {
                 joinRequest.AttendanceStatus = EnumList.JoinGroupState.member;
-                int totalParticipants =  joinRequest.InitMember;  
+                int totalParticipants = joinRequest.InitMember;
                 group.CurrentParticipants += totalParticipants;
             }
             else if (status == EnumList.JoinGroupState.rejected)
@@ -526,50 +526,52 @@ namespace JoinJoy.Controllers
         {
             var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
             int memberId = (int)userToken["Id"];
-            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId && g.MemberId ==memberId);
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId && g.MemberId == memberId);
 
             if (group == null)
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在,或是非團主" });
             }
             var groupWithGames = db.Groups
-                                   .Include("GroupGames.StoreInventory.Game")  //  EF6
+                                   .Include("GroupGames.StoreInventory.Game")  // EF6
                                    .Where(g => g.GroupId == groupId)
                                    .Select(g => new
                                    {
-                                       store = new
+                                       store = g.IsHomeGroup ? null : new
                                        {
                                            storeId = g.Store != null ? g.Store.Id : (int?)null,
                                            storeName = g.Store != null ? g.Store.Name : null,
-                                           plane = g.Store != null ? g.Store.Address : null,
-                                       },                                      
+                                           address = g.Store != null ? g.Store.Address : null,
+                                       },
                                        groupName = g.GroupName,
                                        startTime = g.StartTime,
                                        endTime = g.EndTime,
                                        totalMemberNum = g.MaxParticipants,
                                        description = g.Description,
                                        isHomeGroup = g.IsHomeGroup,
-                                       address = g.Address,
+                                       plane = g.Address,
                                        initMember = g.InitMember,
-                                       beginner = g.Beginner,
-                                       expert = g.Expert,
-                                       practice = g.Practice,
-                                       open = g.Open,
-                                       tutorial = g.Tutorial,
-                                       casual = g.Casual,
-                                       competitive = g.Competitive,
+                                       tags = new List<string> {
+                               g.Beginner ? "新手團" : null,
+                               g.Expert ? "老手團" : null,
+                               g.Practice ? "經驗切磋" : null,
+                               g.Open ? "不限定" : null,
+                               g.Tutorial ? "教學團" : null,
+                               g.Casual ? "輕鬆" : null,
+                               g.Competitive ? "競技" : null
+                                       }.Where(tag => tag != null).ToList(),
                                        isPrivate = g.isPrivate,
-                                       //games = g.GroupGames.Select(gg => gg.StoreInventory.GameDetails.Name).ToList(),
                                        games = g.GroupGames
-                                       .Select(gg => new
-                                       {
-                                           gameId = gg.StoreInventory.Id,
-                                           gameName = gg.StoreInventory.GameDetails.Name,
-                                           gameType = gg.StoreInventory.GameDetails.GameType.TypeName // 假設遊戲類型也存儲在 GameDetails 中
-                                       }).ToList(),
+                                                .Select(gg => new
+                                                {
+                                                    gameId = gg.StoreInventory.Id,
+                                                    gameName = gg.StoreInventory.GameDetails.Name,
+                                                    gameType = gg.StoreInventory.GameDetails.GameType.TypeName
+                                                }).ToList(),
                                        createDate = g.CreationDate
                                    })
                                    .FirstOrDefault();
+
 
             if (groupWithGames == null)
             {
@@ -713,7 +715,7 @@ namespace JoinJoy.Controllers
                 userId = jr.MemberId,
                 userName = jr.Nickname,
                 status = jr.AttendanceStatus.ToString(),
-                initNum = jr.InitMember , // 加1
+                initNum = jr.InitMember, // 加1
                 profileImg = BuildProfileImageUrl(jr.Photo) // 假设这是构建图片 URL 的方法
             }).ToList();
 
@@ -729,7 +731,7 @@ namespace JoinJoy.Controllers
                     userId = leaderDetails.Id,
                     userName = leaderDetails.Nickname,
                     status = EnumList.JoinGroupState.leader.ToString(), // 或其他適合您需求的狀態
-                    initNum = group.InitMember , //前端希望init等於加入總數所以+1本人
+                    initNum = group.InitMember, //前端希望init等於加入總數所以+1本人
                     profileImg = BuildProfileImageUrl(leaderDetails.Photo)
                 };
 
