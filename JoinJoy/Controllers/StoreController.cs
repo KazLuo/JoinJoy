@@ -566,7 +566,7 @@ namespace JoinJoy.Controllers
             {
                 return null; // 或者返回一個默認的圖片路徑
             }
-            return $"http://4.224.16.99/upload/store/{photo}";
+            return $"http://4.224.16.99/upload/store/profile/{photo}";
         }
 
         private string BuildProfileImageUrl(string photo)

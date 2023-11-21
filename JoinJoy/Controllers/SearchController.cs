@@ -48,7 +48,7 @@ namespace JoinJoy.Controllers
             {
                 query = query.Where(store => store.Name.Contains(storeName));
             }
-
+            
             var matchedStoresData = query.Select(store => new
             {
                 store.Id,
@@ -141,7 +141,7 @@ namespace JoinJoy.Controllers
             {
                 query = query.Where(store => store.Name.Contains(viewStoreSearch.storeName));
             }
-
+            var storeCount = query.Count();
             var matchedStoresData = query.Select(store => new
             {
                 store.Id,
@@ -232,7 +232,7 @@ namespace JoinJoy.Controllers
                 hqTag = store.HqTag,
                 popTag = store.PopTag
             }).ToList();
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { matchedStores } });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { matchedStores,storeCount } });
         }
 
 
@@ -364,7 +364,7 @@ namespace JoinJoy.Controllers
             }
 
 
-
+            var groupCount = query.Count();
 
             // 選取匹配群組
             var matchedGroups = query.Select(g => new
@@ -487,7 +487,7 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到符合條件的揪團活動" });
             }
-            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { finalGroups } });
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { finalGroups, groupCount } });
 
         }
 
@@ -656,7 +656,7 @@ namespace JoinJoy.Controllers
             {
                 return null; // 或者返回一個默認的圖片路徑
             }
-            return $"http://4.224.16.99/upload/store/{photo}";
+            return $"http://4.224.16.99/upload/store/profile/{photo}";
         }
 
         private string BuildProfileImageUrl(string photo)
