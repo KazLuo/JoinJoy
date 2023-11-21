@@ -69,29 +69,31 @@ namespace JoinJoy.Models
         }
         public enum GroupTag //遊戲面向
         {
-            all,
-            beginner,
-            expert,
-            practice,
-            open,
-            tutorial,
-            casual,
-            competitive
+            all, //全部
+            beginner, //新手團
+            expert, //老手團
+            practice,//經驗切磋
+            open,//不限定
+            tutorial,//教學團
+            casual,//輕鬆
+            competitive//競技
+
+
         }
 
         public enum Groupppl//揪團總人數
         {
-            all,
-            twotofour,
-            fivetoseven,
-            eightmore
+            all, //全部
+            twotofour, //2~4
+            fivetoseven, //5~7
+            eightmore  //8以上
         }
         public enum Joinppl//可加入人數
         {
             all,
-            onetothree,
-            fourtosix,
-            sevenmore
+            onetothree, //1~3
+            fourtosix, //4~6
+            sevenmore  //7以上
 
         }
             

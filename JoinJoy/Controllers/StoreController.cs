@@ -245,8 +245,10 @@ namespace JoinJoy.Controllers
                 // 讀取圖片並調整尺寸
                 using (var image = SixLabors.ImageSharp.Image.Load(outputPath))
                 {
-                    image.Mutate(x => x.Resize(270, 180));
-
+                    ////店家詳細頁縮圖尺寸
+                    //image.Mutate(x => x.Resize(270, 180));
+                    //修改成店家搜尋頁尺寸
+                    image.Mutate(x => x.Resize(372, 175));
                     if (fileBytes.Length > 2 * 1024 * 1024)
                     {
                         // 壓縮圖片

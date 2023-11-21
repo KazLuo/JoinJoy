@@ -454,7 +454,7 @@ namespace JoinJoy.Controllers
                     userId = g.LeaderMemberId,
                     userName = g.LeaderNickname,
                     status = "leader",
-                    initNum = g.LeaderInitMember + 1,//前端邏輯需+1
+                    initNum = g.LeaderInitMember ,
                     profileImg = BuildProfileImageUrl(g.LeaderProfileImg)
 
                 },
@@ -464,7 +464,7 @@ namespace JoinJoy.Controllers
                     userId = m.memberId,
                     userName = m.memberName,
                     status = db.GroupParticipants.Where(gp => gp.MemberId == m.memberId && g.groupId == gp.GroupId).Select(gp => gp.AttendanceStatus.ToString()).FirstOrDefault(),
-                    initNum = m.initNum + 1, //前端邏輯需+1
+                    initNum = m.initNum ,
                     profileImg = BuildProfileImageUrl(m.profileImg),
                 }).ToList(),
 
@@ -601,7 +601,7 @@ namespace JoinJoy.Controllers
                     userId = g.LeaderMemberId,
                     userName = g.LeaderNickname,
                     status = "leader",
-                    initNum = g.LeaderInitMember + 1,//前端邏輯需+1
+                    initNum = g.LeaderInitMember ,//前端邏輯需+1
                     profileImg = BuildProfileImageUrl(g.LeaderProfileImg)
 
                 },
@@ -611,7 +611,7 @@ namespace JoinJoy.Controllers
                     userId = m.memberId,
                     userName = m.memberName,
                     status = db.GroupParticipants.Where(gp => gp.MemberId == m.memberId && g.groupId == gp.GroupId).Select(gp => gp.AttendanceStatus.ToString()).FirstOrDefault(),
-                    initNum = m.initNum + 1, //前端邏輯需+1
+                    initNum = m.initNum , //前端邏輯需+1
                     profileImg = BuildProfileImageUrl(m.profileImg),
                 }).ToList(),
 

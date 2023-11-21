@@ -55,7 +55,7 @@ namespace JoinJoy.Controllers
             }
 
             // 檢查開團者與攜帶人數是否超過totalMemberNum
-            if (1 + model.initNum > model.totalMemberNum)
+            if ( model.initNum > model.totalMemberNum)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "團主及同行親友不可超過上限人數" });
             }
@@ -113,7 +113,9 @@ namespace JoinJoy.Controllers
                 IsHomeGroup = model.isHomeGroup,
                 Address = model.place,
                 InitMember = model.initNum,
-                CurrentParticipants = 1 + model.initNum,
+                CurrentParticipants =  model.initNum,
+                //修改邏輯
+                //CurrentParticipants = 1 + model.initNum,
                 Beginner = model.beginnerTag,
                 Expert = model.expertTag,
                 Practice = model.practiceTag,
@@ -287,9 +289,18 @@ namespace JoinJoy.Controllers
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "該團已送出預約，下次請早!" });
             }
-            if (group.CurrentParticipants + viewJoinGroup.initNum + 1 > group.MaxParticipants)
+            //if (group.CurrentParticipants + viewJoinGroup.initNum + 1 > group.MaxParticipants)
+            //{
+            //    return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "已經滿團囉!" });
+            //}
+            //修改邏輯
+            if (group.CurrentParticipants + viewJoinGroup.initNum  > group.MaxParticipants)
             {
                 return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "已經滿團囉!" });
+            }
+            if (viewJoinGroup.initNum ==0)
+            {
+                return Content(HttpStatusCode.BadRequest, new { statusCode = HttpStatusCode.BadRequest, status = false, message = "參加人數不可為0!" });
             }
             if (db.GroupParticipants.Any(m => m.GroupId == viewJoinGroup.groupId && m.MemberId == memberId))
             {
@@ -300,7 +311,7 @@ namespace JoinJoy.Controllers
             {
                 GroupId = (int)viewJoinGroup.groupId,
                 MemberId = memberId,
-                InitMember = viewJoinGroup.initNum  // 儲存申請者帶的朋友數量
+                InitMember = viewJoinGroup.initNum  // 儲存申請者帶的朋友數量(包含自己)
             });
 
             db.SaveChanges();
@@ -345,7 +356,7 @@ namespace JoinJoy.Controllers
                 userName = m.Nickname,
                 profileImg = BuildProfileImageUrl(m.Photo),
                 status = EnumList.JoinGroupState.leader.ToString(),
-                initNum = m.InitMember + 1//前端邏輯需要+1
+                initNum = m.InitMember
             }).ToList();
 
             // 同理對於參與者數據
@@ -360,7 +371,7 @@ namespace JoinJoy.Controllers
                           mem.Nickname,
                           mem.Photo,
                           gp.AttendanceStatus,
-                          gp.InitMember//前端邏輯需要+1
+                          gp.InitMember
                       })
                 .ToList();  // 先將數據轉換為List
 
@@ -370,7 +381,7 @@ namespace JoinJoy.Controllers
                 userName = gp.Nickname,
                 profileImg = BuildProfileImageUrl(gp.Photo),
                 status = gp.AttendanceStatus.ToString(),
-                initNum = gp.InitMember + 1
+                initNum = gp.InitMember
             }).ToList();
 
             // 合併leader和member的資料
@@ -433,7 +444,7 @@ namespace JoinJoy.Controllers
             if (status == EnumList.JoinGroupState.member)
             {
                 joinRequest.AttendanceStatus = EnumList.JoinGroupState.member;
-                int totalParticipants = 1 + joinRequest.InitMember;  // 申請者本身加上他的朋友
+                int totalParticipants =  joinRequest.InitMember;  
                 group.CurrentParticipants += totalParticipants;
             }
             else if (status == EnumList.JoinGroupState.rejected)
@@ -694,7 +705,7 @@ namespace JoinJoy.Controllers
                 userId = jr.MemberId,
                 userName = jr.Nickname,
                 status = jr.AttendanceStatus.ToString(),
-                initNum = jr.InitMember + 1, // 加1
+                initNum = jr.InitMember , // 加1
                 profileImg = BuildProfileImageUrl(jr.Photo) // 假设这是构建图片 URL 的方法
             }).ToList();
 
@@ -710,7 +721,7 @@ namespace JoinJoy.Controllers
                     userId = leaderDetails.Id,
                     userName = leaderDetails.Nickname,
                     status = EnumList.JoinGroupState.leader.ToString(), // 或其他適合您需求的狀態
-                    initNum = group.InitMember + 1, //前端希望init等於加入總數所以+1本人
+                    initNum = group.InitMember , //前端希望init等於加入總數所以+1本人
                     profileImg = BuildProfileImageUrl(leaderDetails.Photo)
                 };
 
