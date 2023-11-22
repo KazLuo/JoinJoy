@@ -794,9 +794,9 @@ namespace JoinJoy.Controllers
                     memberId = memberId,
                     memberName = db.Members.Where(m => m.Id == memberId).Select(m => m.Nickname).FirstOrDefault(),
                     memberPhoto = BuildProfileImageUrl( db.Members.Where(m => m.Id == memberId).Select(m => m.Photo).FirstOrDefault()),
-                    isRated = db.MemberRatings.Any(mr => mr.MemberId == memberId && mr.RatedId == userId && mr.GroupId == groupId), // 修改此处以包含评价者信息
-                    score = db.MemberRatings.Where(mr => mr.MemberId == memberId && mr.RatedId == userId && mr.GroupId == groupId).Select(mr => mr.Score).FirstOrDefault(), // 修改此处以包含评价者信息
-                    comment = db.MemberRatings.Where(mr => mr.MemberId == memberId && mr.RatedId == userId && mr.GroupId == groupId).Select(mr => mr.Comment).FirstOrDefault(), // 修改此处以包含评价者信息
+                    isRated = db.MemberRatings.Any(mr => mr.MemberId == userId && mr.RatedId == memberId && mr.GroupId == groupId), 
+                    score = db.MemberRatings.Where(mr => mr.MemberId == userId && mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Score).FirstOrDefault(), 
+                    comment = db.MemberRatings.Where(mr => mr.MemberId == userId && mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Comment).FirstOrDefault(), 
                 }).ToList();
 
             // 檢查是否所有成員都已被評價（包括團主）
