@@ -796,7 +796,8 @@ namespace JoinJoy.Controllers
                     memberPhoto = BuildProfileImageUrl( db.Members.Where(m => m.Id == memberId).Select(m => m.Photo).FirstOrDefault()),
                     isRated = db.MemberRatings.Any(mr => mr.MemberId == userId && mr.RatedId == memberId && mr.GroupId == groupId), 
                     score = db.MemberRatings.Where(mr => mr.MemberId == userId && mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Score).FirstOrDefault(), 
-                    comment = db.MemberRatings.Where(mr => mr.MemberId == userId && mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Comment).FirstOrDefault(), 
+                    comment = db.MemberRatings.Where(mr => mr.MemberId == userId && mr.RatedId == memberId && mr.GroupId == groupId).Select(mr => mr.Comment).FirstOrDefault(),
+                    status = memberId == groupLeaderId ? "leader" : "member"
                 }).ToList();
 
             // 檢查是否所有成員都已被評價（包括團主）
