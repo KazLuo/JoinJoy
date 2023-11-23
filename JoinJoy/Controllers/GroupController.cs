@@ -849,6 +849,185 @@ namespace JoinJoy.Controllers
         }
         #endregion
         /// <summary>
+        /// 取得開團詳細資訊(JWT驗證)
+        /// </summary>
+        /// <param name="groupId">輸入揪團ID</param>
+        /// <returns></returns>
+        #region"取得開團簡易資訊(JWT)"
+        [HttpGet]
+        [JwtAuthFilter]
+        [Route("detailJWT/{groupId}")]
+        public IHttpActionResult GetGroupDetailsJWT(int groupId)
+        {
+            var userToken = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int currentUserId = (int)userToken["Id"];
+
+            var group = db.Groups.FirstOrDefault(g => g.GroupId == groupId && g.MemberId == currentUserId);
+
+            if (group == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "團隊不存在，或是非團主" });
+            }
+
+            // 假設團主的信息存儲在Group表的LeaderId欄位
+            var leaderId = group.MemberId; // 或者是 MemberId，取決於您的資料庫結構
+
+            // 獲取該團隊所有成員的詳細信息，包括團主
+            var membersDetails = db.GroupParticipants
+                .Where(gp => gp.GroupId == groupId)
+                .Join(db.Members,
+                      gp => gp.MemberId,
+                      mem => mem.Id,
+                      (gp, mem) => new
+                      {
+                          gp.MemberId,
+                          mem.Nickname,
+                          gp.AttendanceStatus,
+                          gp.InitMember,
+                          mem.Photo
+                      })
+                .ToList();
+
+            var membersdata = membersDetails.Select(jr => new
+            {
+                userId = jr.MemberId,
+                userName = jr.Nickname,
+                status = jr.AttendanceStatus.ToString(),
+                initNum = jr.InitMember, // 加1
+                profileImg = BuildProfileImageUrl(jr.Photo) // 假设这是构建图片 URL 的方法
+            }).ToList();
+
+            // 添加團主的詳細信息
+            if (!membersDetails.Any(m => m.MemberId == leaderId)) // 如果團主不在成員列表中
+            {
+                var leaderDetails = db.Members
+                    .Where(m => m.Id == leaderId)
+                    .FirstOrDefault();
+
+                var leaderdata = new
+                {
+                    userId = leaderDetails.Id,
+                    userName = leaderDetails.Nickname,
+                    status = EnumList.JoinGroupState.leader.ToString(), // 或其他適合您需求的狀態
+                    initNum = group.InitMember, //前端希望init等於加入總數所以+1本人
+                    profileImg = BuildProfileImageUrl(leaderDetails.Photo)
+                };
+
+                if (leaderdata != null)
+                {
+                    // 將團主插入到列表的第一位
+                    membersdata.Insert(0, leaderdata);
+                }
+            }
+
+            // 接著，我們獲取這個團隊的其他信息
+            var groupQuery = db.Groups
+                .Include(g => g.Store)
+                .Include(g => g.GroupGames.Select(gg => gg.StoreInventory.GameDetails))
+                .Where(g => g.GroupId == groupId)
+                .Select(g => new
+                {
+                    g.GroupName,
+                    g.GroupState,
+                    g.IsHomeGroup,
+                    g.Address,
+                    g.isPrivate,
+                    Price = g.IsHomeGroup || g.Store == null ? (int?)null : g.Store.Price,
+                    StoreId = g.Store != null ? g.Store.Id : (int?)null,
+                    StoreName = g.Store != null ? g.Store.Name : null,
+                    StoreAddress = g.Store != null ? g.Store.Address : null,
+
+                    g.StartTime,
+                    g.EndTime,
+                    g.MaxParticipants,
+                    Games = g.GroupGames.Select(gg => new
+                    {
+                        gameId = gg.StoreInventory.Id,
+                        gameName = gg.StoreInventory.GameDetails.Name,
+                        gameType = gg.StoreInventory.GameDetails.GameType.Id
+                    }).ToList(),
+                    g.Description,
+                    Tags = new // 假設 Tags 是一個匿名類型
+                    {
+                        Beginner = g.Beginner,
+                        Expert = g.Expert,
+                        Practice = g.Practice,
+                        Open = g.Open,
+                        Tutorial = g.Tutorial,
+                        Casual = g.Casual,
+                        Competitive = g.Competitive
+                    }
+                })
+                .FirstOrDefault();
+
+            if (groupQuery == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到團隊相關訊息" });
+            }
+
+            // 處理 tags
+            var tags = new List<string>();
+            if (groupQuery.Tags.Beginner) tags.Add("新手團");
+            if (groupQuery.Tags.Expert) tags.Add("老手團");
+            if (groupQuery.Tags.Practice) tags.Add("經驗切磋");
+            if (groupQuery.Tags.Open) tags.Add("不限定");
+            if (groupQuery.Tags.Tutorial) tags.Add("教學團");
+            if (groupQuery.Tags.Casual) tags.Add("輕鬆");
+            if (groupQuery.Tags.Competitive) tags.Add("競技");
+
+            // 根據是否為自家團隊來決定是否顯示商店和遊戲資訊
+            object storeInfo = groupQuery.IsHomeGroup ? null : new
+            {
+                storeId = groupQuery.StoreId,
+                storeName = groupQuery.StoreName,
+                address = groupQuery.StoreAddress
+            };
+
+            object gamesInfo = groupQuery.IsHomeGroup ? null : groupQuery.Games;
+
+            // 獲取當前時間
+            DateTime now = DateTime.Now;
+
+            string groupStatus;
+
+            // 判斷組的狀態並根據時間進行修改
+            switch (groupQuery.GroupState)
+            {
+                case EnumList.GroupState.開團中:
+                    groupStatus = now > groupQuery.StartTime ? EnumList.GroupState.已失效.ToString() : EnumList.GroupState.開團中.ToString();
+                    break;
+                case EnumList.GroupState.已預約:
+                    groupStatus = now > groupQuery.EndTime ? EnumList.GroupState.已結束.ToString() : EnumList.GroupState.已預約.ToString();
+                    break;
+                default:
+                    groupStatus = groupQuery.GroupState.ToString();
+                    break;
+            }
+
+            // 建立最終的物件
+            var groupWithGames = new
+            {
+                groupName = groupQuery.GroupName,
+                //groupStatus = groupQuery.GroupState.ToString(),
+                groupStatus = groupStatus,
+                place = groupQuery.IsHomeGroup ? groupQuery.Address : null,
+                isPrivate = groupQuery.isPrivate,
+                store = storeInfo,
+                date = groupQuery.StartTime.ToString("yyyy/MM/dd"),
+                startTime = groupQuery.StartTime.ToString("HH:mm"),
+                endTime = groupQuery.EndTime.ToString("HH:mm"),
+                cost = groupQuery.Price.HasValue ? $"NT${groupQuery.Price.Value} 元 / 每人每小時" : null,
+                totalMemberNum = groupQuery.MaxParticipants,
+                games = gamesInfo,
+                description = groupQuery.Description,
+                members = membersdata,
+                tags = tags // 使用處理後的標籤列表
+            };
+            return Content(HttpStatusCode.OK, new { statusCode = HttpStatusCode.OK, status = true, message = "回傳成功", data = new { groupWithGames } });
+
+        }
+        #endregion
+        /// <summary>
         /// 團員退出團隊
         /// </summary>
         /// <param name="groupId"></param>
