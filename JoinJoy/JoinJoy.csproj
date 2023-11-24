@@ -240,6 +240,7 @@
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="Controllers\AuthController.cs" />
     <Compile Include="Controllers\CorsController.cs" />
+    <Compile Include="Controllers\FollowController.cs" />
     <Compile Include="Controllers\GroupController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MemberController.cs" />
@@ -249,17 +250,9 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202311111309147_re.cs" />
-    <Compile Include="Migrations\202311111309147_re.Designer.cs">
-      <DependentUpon>202311111309147_re.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202311120901329_add cover.cs" />
-    <Compile Include="Migrations\202311120901329_add cover.Designer.cs">
-      <DependentUpon>202311120901329_add cover.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202311151540422_add Ispresent.cs" />
-    <Compile Include="Migrations\202311151540422_add Ispresent.Designer.cs">
-      <DependentUpon>202311151540422_add Ispresent.cs</DependentUpon>
+    <Compile Include="Migrations\202311240832160_1.cs" />
+    <Compile Include="Migrations\202311240832160_1.Designer.cs">
+      <DependentUpon>202311240832160_1.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\City.cs" />
@@ -390,14 +383,8 @@
     <Content Include="Scripts\jquery-3.4.1.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202311111309147_re.resx">
-      <DependentUpon>202311111309147_re.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202311120901329_add cover.resx">
-      <DependentUpon>202311120901329_add cover.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202311151540422_add Ispresent.resx">
-      <DependentUpon>202311151540422_add Ispresent.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202311240832160_1.resx">
+      <DependentUpon>202311240832160_1.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

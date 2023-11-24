@@ -22,5 +22,7 @@ namespace JoinJoy.Models
             [ForeignKey("StoreId")]
             public virtual Store Store { get; set; }
             public int StoreId { get; set; }
+
+        public DateTime InitDate { get; set; } = DateTime.Now;
     }
 }
