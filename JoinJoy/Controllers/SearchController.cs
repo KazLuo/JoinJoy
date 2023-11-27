@@ -334,7 +334,7 @@ namespace JoinJoy.Controllers
 
             }
 
-            //篩選可加入人數
+            //篩選Tag
             switch (viewGroupSearch.groupTag)
             {
                 case EnumList.GroupTag.all:

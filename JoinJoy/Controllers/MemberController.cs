@@ -1052,6 +1052,66 @@ namespace JoinJoy.Controllers
             return Ok(new { statusCode = HttpStatusCode.OK, status = true, message = "評價成功" });
         }
         #endregion
+        /// <summary>
+        /// 取得團隊店家資訊
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <returns></returns>
+        #region"取得團隊店家資訊"
+        [HttpGet]
+        [Route("storeinfobygroup/{groupId}")]
+        public IHttpActionResult GetStoreInfoByGroup(int groupId)
+        {
+            // 檢查團隊是否存在
+            var groupExists = db.Groups.Any(g => g.GroupId == groupId && g.IsHomeGroup!= true);
+            if (!groupExists)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到團隊，或是團隊是自家團" });
+            }
+
+            // 獲取與團隊相關的店家資料
+            var storeInfo = db.Groups
+                .Where(g => g.GroupId == groupId)
+                .Select(g => new {
+                     g.Store.Id,
+                     g.Store.Name,
+                     g.Store.Address,
+                     g.StartTime,
+                     g.EndTime,
+                     g.Store.Photo,
+            // 其他需要的店家資訊，例如地址、聯絡方式等
+        })
+                .FirstOrDefault();
+
+            var finalmatch =  new 
+            {
+                storeId=storeInfo.Id,
+                storeName = storeInfo.Name,
+                address = storeInfo.Address,
+                date = storeInfo.StartTime.ToString("yyyy/mm/dd"),
+                startTime = storeInfo.StartTime.ToString("HH:mm"),
+                endTime = storeInfo.EndTime.ToString("HH:mm"),
+                photo = BuildStoreImageUrl( storeInfo.Photo),
+
+                };
+
+            // 如果找不到店家資料
+            if (finalmatch == null)
+            {
+                return Content(HttpStatusCode.NotFound, new { statusCode = HttpStatusCode.NotFound, status = false, message = "找不到與此團隊相關的店家資訊" });
+            }
+
+            // 返回店家資料
+            return Ok(new
+            {
+                statusCode = HttpStatusCode.OK,
+                status = true,
+                message = "取得店家資訊成功",
+                data = finalmatch
+            });
+        }
+
+        #endregion
 
 
 
@@ -1067,7 +1127,15 @@ namespace JoinJoy.Controllers
             return $"https://2be5-4-224-16-99.ngrok-free.app/upload/profile/{photo}";
         }
 
-
+        private string BuildStoreImageUrl(string photo)
+        {
+            if (string.IsNullOrEmpty(photo))
+            {
+                return null; // 或者返回一個默認的圖片路徑
+            }
+            //return $"http://4.224.16.99/upload/store/profile/{photo}";
+            return $"https://2be5-4-224-16-99.ngrok-free.app/upload/store/profile/{photo}";
+        }
 
 
 
