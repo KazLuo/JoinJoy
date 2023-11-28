@@ -1088,7 +1088,7 @@ namespace JoinJoy.Controllers
                 storeId=storeInfo.Id,
                 storeName = storeInfo.Name,
                 address = storeInfo.Address,
-                date = storeInfo.StartTime.ToString("yyyy/mm/dd"),
+                date = storeInfo.StartTime.ToString("yyyy/MM/dd"),
                 startTime = storeInfo.StartTime.ToString("HH:mm"),
                 endTime = storeInfo.EndTime.ToString("HH:mm"),
                 photo = BuildStoreImageUrl( storeInfo.Photo),

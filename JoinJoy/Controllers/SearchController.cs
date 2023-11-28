@@ -216,8 +216,8 @@ namespace JoinJoy.Controllers
                 address = store.Address,
                 profileImg = string.IsNullOrEmpty(store.ProfileImgPath) ? null : BuildStoreImageUrl(store.ProfileImgPath),
                 cover = string.IsNullOrEmpty(store.CoverPhotoPath) ? null : BuildStoreImageUrl(store.CoverPhotoPath),
-                openTime = store.OpenTime,
-                closeTime = store.CloseTime,
+                openTime = store.OpenTime.ToString(@"hh\:mm"),
+                closeTime = store.CloseTime.ToString(@"hh\:mm"),
                 score = CalculateStoreScore(store.Id),
                 cost = store.Price,
                 tags = new List<string>
