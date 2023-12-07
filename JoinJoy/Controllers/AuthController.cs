@@ -219,7 +219,9 @@ namespace JoinJoy.Controllers
                 return null; // 或者返回一個默認的圖片路徑
             }
             //return $"http://4.224.16.99/upload/profile/{photo}";
-            return $"https://2be5-4-224-16-99.ngrok-free.app/upload/profile/{photo}";
+            //return $"https://2be5-4-224-16-99.ngrok-free.app/upload/profile/{photo}";
+            return $"https://ec2-54-238-108-195.ap-northeast-1.compute.amazonaws.com/upload/profile/{photo}";
+  
         }
 
     }
