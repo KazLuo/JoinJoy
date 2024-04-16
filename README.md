@@ -5,7 +5,7 @@
 <div align="center" style="margin-bottom:24px">
   <a href="https://joinjoy.rocket-coding.com/">專案網址</a> ｜
   <a href="https://github.com/star82620/join-joy">前端 Github Repo</a> ｜
-  <a href="https://joinjoy-api.rocket-coding.com/">Swagger</a>
+  <a href="https://joinjoy-api.rocket-coding.com/swagger">Swagger API</a>
 </div>
 
 <p>
